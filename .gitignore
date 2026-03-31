@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+server.log
+enrollment.db
+uploads/
+*.xlsx
+*.zip

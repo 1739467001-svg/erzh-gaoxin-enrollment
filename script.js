@@ -1,0 +1,1166 @@
+// ============================================================
+// 全局状态
+// ============================================================
+let currentUser = null;
+let allStudents = [];
+let signPreviewStudents = [];
+
+const API_BASE = '';
+
+// ============================================================
+// Toast 提示
+// ============================================================
+function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = type ? `show ${type}` : 'show';
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+// ============================================================
+// 登录 / 登出
+// ============================================================
+async function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    if (!username || !password) {
+        document.getElementById('loginError').textContent = '请输入用户名和密码';
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentUser = data.user;
+            showMainPage();
+        } else {
+            document.getElementById('loginError').textContent = data.message || '用户名或密码错误';
+        }
+    } catch (e) {
+        document.getElementById('loginError').textContent = '网络错误，请稍后重试';
+    }
+}
+
+function logout() {
+    currentUser = null;
+    showPage('loginPage');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('loginError').textContent = '';
+}
+
+function showMainPage() {
+    if (currentUser.role === 'teacher') {
+        switchToRegister();
+    } else {
+        switchToAdmin();
+    }
+}
+
+// ============================================================
+// 页面切换
+// ============================================================
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => {
+        p.style.display = 'none';
+        p.style.visibility = 'hidden';
+    });
+    const el = document.getElementById(pageId);
+    el.style.visibility = 'visible';
+    el.style.display = (pageId === 'loginPage') ? 'flex' : 'block';
+}
+
+function switchToRegister() {
+    showPage('registerPage');
+    document.getElementById('currentUser').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    document.getElementById('adminBtn').style.display = (currentUser.role !== 'teacher') ? 'inline-block' : 'none';
+}
+
+function switchToAdmin() {
+    showPage('adminPage');
+    document.getElementById('currentUserAdmin').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    const isAdmin = currentUser.role === 'admin';
+    const isManager = currentUser.role === 'admin' || currentUser.role === 'manager';
+    document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
+    document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    loadStudents();
+}
+
+function switchToAddStudent() {
+    showPage('addStudentPage');
+    document.getElementById('currentUserAddStudent').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    document.getElementById('addStudentForm').reset();
+}
+
+function switchToUserManagement() {
+    showPage('userManagementPage');
+    document.getElementById('currentUserUserManagement').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    loadUsers();
+}
+
+function switchToSignContract() {
+    showPage('signContractPage');
+    document.getElementById('currentUserSign').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    resetSignPage();
+}
+
+function switchToExamPapers() {
+    showPage('examPapersPage');
+    document.getElementById('currentUserExam').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    // 仅教师及以上（非普通访客）可上传试卷
+    const canUpload = currentUser && ['admin', 'manager', 'teacher'].includes(currentUser.role);
+    document.getElementById('uploadPaperCard').style.display = canUpload ? 'block' : 'none';
+    loadExamPapers();
+}
+
+function backFromExamPapers() {
+    if (currentUser.role === 'teacher') {
+        switchToRegister();
+    } else {
+        switchToAdmin();
+    }
+}
+
+async function switchToStats() {
+    showPage('statsPage');
+    document.getElementById('currentUserStats').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    loadStatistics();
+}
+
+async function switchToLogs() {
+    showPage('logsPage');
+    document.getElementById('currentUserLogs').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    loadLogs();
+}
+
+function roleLabel(role) {
+    const map = { admin: '超级管理员', manager: '管理员', teacher: '签约老师' };
+    return map[role] || role;
+}
+
+// ============================================================
+// 修改密码
+// ============================================================
+function showChangePwdModal() {
+    document.getElementById('oldPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('changePwdError').textContent = '';
+    document.getElementById('changePwdModal').style.display = 'flex';
+}
+
+function closeChangePwdModal(event) {
+    if (event && event.target !== document.getElementById('changePwdModal')) return;
+    document.getElementById('changePwdModal').style.display = 'none';
+}
+
+async function submitChangePassword() {
+    const oldPwd = document.getElementById('oldPassword').value.trim();
+    const newPwd = document.getElementById('newPassword').value.trim();
+    const confirmPwd = document.getElementById('confirmPassword').value.trim();
+    const errEl = document.getElementById('changePwdError');
+    errEl.textContent = '';
+
+    if (!oldPwd || !newPwd || !confirmPwd) {
+        errEl.textContent = '请填写所有密码字段';
+        return;
+    }
+    if (newPwd.length < 6) {
+        errEl.textContent = '新密码至少需要6位';
+        return;
+    }
+    if (newPwd !== confirmPwd) {
+        errEl.textContent = '两次输入的新密码不一致';
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/api/users/change-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: currentUser.username,
+                old_password: oldPwd,
+                new_password: newPwd
+            })
+        });
+        const result = await res.json();
+        if (result.success) {
+            document.getElementById('changePwdModal').style.display = 'none';
+            showToast('密码修改成功！', 'success');
+        } else {
+            errEl.textContent = result.message || '修改失败';
+        }
+    } catch (e) {
+        errEl.textContent = '网络错误，请重试';
+    }
+}
+
+// ============================================================
+// 数据统计
+// ============================================================
+async function loadStatistics() {
+    try {
+        const res = await fetch(`${API_BASE}/api/statistics`);
+        const data = await res.json();
+
+        // 概览卡片
+        document.getElementById('statTotal').textContent = data.total;
+        document.getElementById('statSigned').textContent = data.signed;
+        document.getElementById('statUnsigned').textContent = data.unsigned;
+        document.getElementById('statRate').textContent = data.sign_rate + '%';
+
+        // 近7天趋势
+        renderTrendChart(data.daily_trend);
+
+        // 各行政区
+        renderBarChart('districtChart', data.by_district.map(d => ({ label: d.district, value: d.count })));
+
+        // 各老师签约
+        renderBarChart('teacherChart', data.by_teacher.map(t => ({
+            label: t.teacher,
+            value: t.total,
+            extra: `已签 ${t.signed}`
+        })));
+
+        // 承诺班型
+        renderBarChart('classChart', data.by_class.map(c => ({ label: c.class, value: c.count })));
+
+        // 来源学校
+        renderBarChart('schoolChart', data.by_school.map(s => ({ label: s.school, value: s.count })));
+
+        // 系统概况
+        const overviewData = [
+            { label: '学生总数', value: data.total },
+            { label: '已签约', value: data.signed },
+            { label: '未签约', value: data.unsigned },
+            { label: '试卷数量', value: data.paper_total }
+        ];
+        renderBarChart('overviewChart', overviewData, 'green');
+
+    } catch (e) {
+        console.error('加载统计数据失败', e);
+    }
+}
+
+function renderTrendChart(trend) {
+    const container = document.getElementById('trendChart');
+    if (!trend || trend.length === 0) {
+        container.innerHTML = '<div style="color:#aaa;font-size:13px;padding:20px 0;">暂无数据</div>';
+        return;
+    }
+    const maxVal = Math.max(...trend.map(d => d.count), 1);
+    container.innerHTML = trend.map(d => {
+        const pct = Math.round((d.count / maxVal) * 100);
+        const label = d.day ? d.day.slice(5) : ''; // 显示 MM-DD
+        return `
+            <div class="trend-bar-wrap">
+                <div class="trend-bar-num">${d.count}</div>
+                <div class="trend-bar" style="height:${Math.max(pct, 4)}%"></div>
+                <div class="trend-bar-label">${label}</div>
+            </div>`;
+    }).join('');
+}
+
+function renderBarChart(containerId, items, colorClass = '') {
+    const container = document.getElementById(containerId);
+    if (!items || items.length === 0) {
+        container.innerHTML = '<li style="color:#aaa;font-size:13px;padding:10px 0;">暂无数据</li>';
+        return;
+    }
+    const maxVal = Math.max(...items.map(i => i.value), 1);
+    container.innerHTML = items.map(item => {
+        const pct = Math.round((item.value / maxVal) * 100);
+        const extra = item.extra ? `<span style="color:#888;font-size:11px;margin-left:4px;">(${item.extra})</span>` : '';
+        return `
+            <li class="chart-bar-item">
+                <span class="chart-bar-label" title="${item.label}">${item.label}</span>
+                <div class="chart-bar-track">
+                    <div class="chart-bar-fill ${colorClass}" style="width:${pct}%"></div>
+                </div>
+                <span class="chart-bar-val">${item.value}${extra}</span>
+            </li>`;
+    }).join('');
+}
+
+// ============================================================
+// 操作日志
+// ============================================================
+async function loadLogs() {
+    const tbody = document.getElementById('logsTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">加载中...</td></tr>';
+    try {
+        const res = await fetch(`${API_BASE}/api/logs`);
+        const logs = await res.json();
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">暂无日志</td></tr>';
+            return;
+        }
+        tbody.innerHTML = logs.map((log, idx) => {
+            const badgeClass = getLogBadgeClass(log.action);
+            return `<tr>
+                <td>${idx + 1}</td>
+                <td>${log.operator || ''}</td>
+                <td><span class="log-action-badge ${badgeClass}">${log.action}</span></td>
+                <td>${log.target || ''}</td>
+                <td>${log.detail || ''}</td>
+                <td>${log.log_time || ''}</td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#dc3545;padding:20px;">加载失败，请刷新重试</td></tr>';
+    }
+}
+
+function getLogBadgeClass(action) {
+    if (!action) return 'default';
+    if (action.includes('登录')) return 'login';
+    if (action.includes('新增') || action.includes('添加') || action.includes('上传')) return 'add';
+    if (action.includes('编辑') || action.includes('修改') || action.includes('密码')) return 'edit';
+    if (action.includes('删除')) return 'delete';
+    if (action.includes('签约')) return 'sign';
+    return 'default';
+}
+
+// ============================================================
+// 学生管理
+// ============================================================
+async function loadStudents() {
+    try {
+        const res = await fetch(`${API_BASE}/api/students`);
+        allStudents = await res.json();
+        renderStudentTable(allStudents);
+    } catch (e) {
+        console.error('加载学生数据失败', e);
+    }
+}
+
+function renderStudentTable(students) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="32" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
+        return;
+    }
+    students.forEach((s, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${s.name || ''}</td>
+            <td>${s.gender || ''}</td>
+            <td>${s.phone1 || ''}</td>
+            <td>${s.phone2 || ''}</td>
+            <td>${s.district || ''}</td>
+            <td>${s.school || ''}</td>
+            <td>${s.graduation_year || ''}</td>
+            <td>${s.class_name || ''}</td>
+            <td>${s.grade_total || ''}</td>
+            <td>${s['rank_初一上'] || ''}</td>
+            <td>${s['rank_初一下'] || ''}</td>
+            <td>${s['rank_初二上'] || ''}</td>
+            <td>${s['rank_初二下'] || ''}</td>
+            <td>${s['rank_初三上期中'] || ''}</td>
+            <td>${s['rank_初三上期末'] || ''}</td>
+            <td>${s['score_初三上期末'] || ''}</td>
+            <td>${s['score_一模'] || ''}</td>
+            <td>${s['score_二模'] || ''}</td>
+            <td>${s.test_paper || ''}</td>
+            <td>${s.test_location || ''}</td>
+            <td>${s.math_score || ''}</td>
+            <td>${s.english_score || ''}</td>
+            <td>${s.total_score || ''}</td>
+            <td>${s.evaluation || ''}</td>
+            <td>${s.promised_class || ''}</td>
+            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '已签约' : '未签约'}</span></td>
+            <td>${s.file_path ? `<a href="/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : ''}</td>
+            <td>${s.remark || ''}</td>
+            <td>${s.teacher || ''}</td>
+            <td>${s.createTime || ''}</td>
+            <td>
+                <button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>
+                <button class="btn-table btn-delete" onclick="deleteStudent(${s.id})">删除</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// 高级筛选（客户端过滤）
+function applyFilters() {
+    const keyword = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    const signed = document.getElementById('filterSigned').value;
+    const district = (document.getElementById('filterDistrict').value || '').trim().toLowerCase();
+    const teacher = (document.getElementById('filterTeacher').value || '').trim().toLowerCase();
+    const cls = (document.getElementById('filterClass').value || '').trim().toLowerCase();
+
+    const filtered = allStudents.filter(s => {
+        if (keyword && !(
+            (s.name || '').toLowerCase().includes(keyword) ||
+            (s.school || '').toLowerCase().includes(keyword) ||
+            (s.phone1 || '').includes(keyword)
+        )) return false;
+        if (signed !== '' && String(s.is_signed) !== signed) return false;
+        if (district && !(s.district || '').toLowerCase().includes(district)) return false;
+        if (teacher && !(s.teacher || '').toLowerCase().includes(teacher)) return false;
+        if (cls && !(s.promised_class || '').toLowerCase().includes(cls)) return false;
+        return true;
+    });
+    renderStudentTable(filtered);
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterSigned').value = '';
+    document.getElementById('filterDistrict').value = '';
+    document.getElementById('filterTeacher').value = '';
+    document.getElementById('filterClass').value = '';
+    renderStudentTable(allStudents);
+}
+
+// 新增学生表单提交
+document.addEventListener('DOMContentLoaded', () => {
+    const addForm = document.getElementById('addStudentForm');
+    if (addForm) {
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('addFile');
+            let filePath = '';
+            if (fileInput.files[0]) {
+                const fd = new FormData();
+                fd.append('file', fileInput.files[0]);
+                const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
+                const uploadData = await uploadRes.json();
+                if (uploadData.success) filePath = uploadData.file_path;
+            }
+            const data = {
+                name: document.getElementById('addStudentName').value,
+                gender: document.getElementById('addGender').value,
+                phone1: document.getElementById('addPhone1').value,
+                phone2: document.getElementById('addPhone2').value,
+                district: document.getElementById('addDistrict').value,
+                school: document.getElementById('addSchool').value,
+                graduation_year: document.getElementById('addGraduation_year').value || null,
+                class_name: document.getElementById('addClass_name').value,
+                grade_total: document.getElementById('addGrade_total').value || null,
+                'rank_初一上': document.getElementById('addRank_初一上').value || null,
+                'rank_初一下': document.getElementById('addRank_初一下').value || null,
+                'rank_初二上': document.getElementById('addRank_初二上').value || null,
+                'rank_初二下': document.getElementById('addRank_初二下').value || null,
+                'rank_初三上期中': document.getElementById('addRank_初三上期中').value || null,
+                'rank_初三上期末': document.getElementById('addRank_初三上期末').value || null,
+                'score_初三上期末': document.getElementById('addScore_初三上期末').value,
+                'score_一模': document.getElementById('addScore_一模').value,
+                'score_二模': document.getElementById('addScore_二模').value,
+                test_paper: document.getElementById('addTest_paper').value,
+                test_location: document.getElementById('addTest_location').value,
+                math_score: document.getElementById('addMath_score').value,
+                english_score: document.getElementById('addEnglish_score').value,
+                total_score: document.getElementById('addTotal_score').value,
+                evaluation: document.getElementById('addEvaluation').value,
+                promised_class: document.getElementById('addPromised_class').value,
+                is_signed: parseInt(document.getElementById('addIs_signed').value),
+                reason: document.getElementById('addReason').value,
+                score: document.getElementById('addScore').value,
+                file_path: filePath,
+                remark: document.getElementById('addRemark').value,
+                teacher: currentUser.name
+            };
+            const res = await fetch(`${API_BASE}/api/students`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('学生信息添加成功！', 'success');
+                switchToAdmin();
+            } else {
+                showToast('添加失败：' + result.message, 'error');
+            }
+        });
+    }
+
+    // 教师登记表单
+    const studentForm = document.getElementById('studentForm');
+    if (studentForm) {
+        studentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('file');
+            let filePath = '';
+            if (fileInput.files[0]) {
+                const fd = new FormData();
+                fd.append('file', fileInput.files[0]);
+                const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
+                const uploadData = await uploadRes.json();
+                if (uploadData.success) filePath = uploadData.file_path;
+            }
+            const data = {
+                name: document.getElementById('studentName').value,
+                school: document.getElementById('school').value,
+                phone1: document.getElementById('phone1').value,
+                reason: document.getElementById('reason').value,
+                score: document.getElementById('score').value,
+                file_path: filePath,
+                remark: document.getElementById('remark').value,
+                teacher: currentUser.name
+            };
+            const res = await fetch(`${API_BASE}/api/students`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('学生签约登记成功！', 'success');
+                studentForm.reset();
+            } else {
+                showToast('登记失败：' + result.message, 'error');
+            }
+        });
+    }
+
+    // 编辑表单
+    const editForm = document.getElementById('editForm');
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const fileInput = document.getElementById('editFile');
+            let filePath = document.getElementById('currentFile').dataset.path || '';
+            if (fileInput.files[0]) {
+                const fd = new FormData();
+                fd.append('file', fileInput.files[0]);
+                const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
+                const uploadData = await uploadRes.json();
+                if (uploadData.success) filePath = uploadData.file_path;
+            }
+            const data = {
+                name: document.getElementById('editStudentName').value,
+                gender: document.getElementById('editGender').value,
+                phone1: document.getElementById('editPhone1').value,
+                phone2: document.getElementById('editPhone2').value,
+                district: document.getElementById('editDistrict').value,
+                school: document.getElementById('editSchool').value,
+                graduation_year: document.getElementById('editGraduation_year').value || null,
+                class_name: document.getElementById('editClass_name').value,
+                grade_total: document.getElementById('editGrade_total').value || null,
+                'rank_初一上': document.getElementById('editRank_初一上').value || null,
+                'rank_初一下': document.getElementById('editRank_初一下').value || null,
+                'rank_初二上': document.getElementById('editRank_初二上').value || null,
+                'rank_初二下': document.getElementById('editRank_初二下').value || null,
+                'rank_初三上期中': document.getElementById('editRank_初三上期中').value || null,
+                'rank_初三上期末': document.getElementById('editRank_初三上期末').value || null,
+                'score_初三上期末': document.getElementById('editScore_初三上期末').value,
+                'score_一模': document.getElementById('editScore_一模').value,
+                'score_二模': document.getElementById('editScore_二模').value,
+                test_paper: document.getElementById('editTest_paper').value,
+                test_location: document.getElementById('editTest_location').value,
+                math_score: document.getElementById('editMath_score').value,
+                english_score: document.getElementById('editEnglish_score').value,
+                total_score: document.getElementById('editTotal_score').value,
+                evaluation: document.getElementById('editEvaluation').value,
+                promised_class: document.getElementById('editPromised_class').value,
+                is_signed: parseInt(document.getElementById('editIs_signed').value),
+                reason: document.getElementById('editReason').value,
+                score: document.getElementById('editScore').value,
+                file_path: filePath,
+                remark: document.getElementById('editRemark').value,
+                teacher: currentUser.name
+            };
+            const res = await fetch(`${API_BASE}/api/students/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('学生信息修改成功！', 'success');
+                switchToAdmin();
+            } else {
+                showToast('修改失败：' + result.message, 'error');
+            }
+        });
+    }
+
+    // 用户表单
+    const userForm = document.getElementById('userForm');
+    if (userForm) {
+        userForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('userId').value;
+            const data = {
+                username: document.getElementById('userUsername').value,
+                password: document.getElementById('userPassword').value,
+                role: document.getElementById('userRole').value,
+                name: document.getElementById('userName').value
+            };
+            let res;
+            if (id) {
+                res = await fetch(`${API_BASE}/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                res = await fetch(`${API_BASE}/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            const result = await res.json();
+            if (result.success) {
+                showToast(id ? '用户修改成功！' : '用户添加成功！', 'success');
+                hideUserForm();
+                loadUsers();
+            } else {
+                showToast('操作失败：' + result.
+message, 'error');
+            }
+        });
+    }
+
+    // 试卷上传表单
+    const uploadPaperForm = document.getElementById('uploadPaperForm');
+    if (uploadPaperForm) {
+        uploadPaperForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('paperFile');
+            if (!fileInput.files[0]) { showToast('请选择试卷文件', 'error'); return; }
+            const fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            fd.append('title', document.getElementById('paperTitle').value);
+            fd.append('year', document.getElementById('paperYear').value);
+            fd.append('description', document.getElementById('paperDesc').value);
+            fd.append('uploader', currentUser.name);
+            try {
+                const res = await fetch(`${API_BASE}/api/exam-papers`, { method: 'POST', body: fd });
+                const result = await res.json();
+                if (result.success) {
+                    showToast('试卷上传成功！', 'success');
+                    uploadPaperForm.reset();
+                    loadExamPapers();
+                } else {
+                    showToast('上传失败：' + result.message, 'error');
+                }
+            } catch (err) {
+                showToast('上传失败，请检查网络', 'error');
+            }
+        });
+    }
+
+    // Enter键登录
+    document.getElementById('password').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') login();
+    });
+});
+
+// ============================================================
+// 编辑学生
+// ============================================================
+async function editStudent(id) {
+    try {
+        const res = await fetch(`${API_BASE}/api/students/${id}`);
+        const s = await res.json();
+        showPage('editPage');
+        document.getElementById('currentUserEdit').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        document.getElementById('editId').value = s.id;
+        document.getElementById('editStudentName').value = s.name || '';
+        document.getElementById('editGender').value = s.gender || '';
+        document.getElementById('editPhone1').value = s.phone1 || '';
+        document.getElementById('editPhone2').value = s.phone2 || '';
+        document.getElementById('editDistrict').value = s.district || '';
+        document.getElementById('editSchool').value = s.school || '';
+        document.getElementById('editGraduation_year').value = s.graduation_year || '';
+        document.getElementById('editClass_name').value = s.class_name || '';
+        document.getElementById('editGrade_total').value = s.grade_total || '';
+        document.getElementById('editRank_初一上').value = s['rank_初一上'] || '';
+        document.getElementById('editRank_初一下').value = s['rank_初一下'] || '';
+        document.getElementById('editRank_初二上').value = s['rank_初二上'] || '';
+        document.getElementById('editRank_初二下').value = s['rank_初二下'] || '';
+        document.getElementById('editRank_初三上期中').value = s['rank_初三上期中'] || '';
+        document.getElementById('editRank_初三上期末').value = s['rank_初三上期末'] || '';
+        document.getElementById('editScore_初三上期末').value = s['score_初三上期末'] || '';
+        document.getElementById('editScore_一模').value = s['score_一模'] || '';
+        document.getElementById('editScore_二模').value = s['score_二模'] || '';
+        document.getElementById('editTest_paper').value = s.test_paper || '';
+        document.getElementById('editTest_location').value = s.test_location || '';
+        document.getElementById('editMath_score').value = s.math_score || '';
+        document.getElementById('editEnglish_score').value = s.english_score || '';
+        document.getElementById('editTotal_score').value = s.total_score || '';
+        document.getElementById('editEvaluation').value = s.evaluation || '';
+        document.getElementById('editPromised_class').value = s.promised_class || '';
+        document.getElementById('editIs_signed').value = s.is_signed || 0;
+        document.getElementById('editReason').value = s.reason || '';
+        document.getElementById('editScore').value = s.score || '';
+        document.getElementById('editRemark').value = s.remark || '';
+        const cf = document.getElementById('currentFile');
+        cf.dataset.path = s.file_path || '';
+        cf.textContent = s.file_path ? `当前文件：${s.file_path}` : '（无文件）';
+    } catch (e) {
+        showToast('加载学生数据失败', 'error');
+    }
+}
+
+async function deleteStudent(id) {
+    if (!confirm('确定要删除该学生记录吗？此操作不可恢复！')) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/students/${id}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) {
+            showToast('删除成功', 'success');
+            loadStudents();
+        } else {
+            showToast('删除失败：' + result.message, 'error');
+        }
+    } catch (e) {
+        showToast('网络错误', 'error');
+    }
+}
+
+// ============================================================
+// 用户管理
+// ============================================================
+async function loadUsers() {
+    try {
+        const res = await fetch(`${API_BASE}/api/users`);
+        const users = await res.json();
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+        users.forEach((u, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${u.username}</td>
+                <td>${roleLabel(u.role)}</td>
+                <td>${u.name}</td>
+                <td>
+                    <button class="btn-table btn-edit" onclick="editUser(${u.id}, '${u.username}', '${u.role}', '${u.name}')">编辑</button>
+                    <button class="btn-table btn-delete" onclick="deleteUser(${u.id})">删除</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        console.error('加载用户失败', e);
+    }
+}
+
+function showAddUserForm() {
+    document.getElementById('userFormTitle').textContent = '添加用户';
+    document.getElementById('userId').value = '';
+    document.getElementById('userUsername').value = '';
+    document.getElementById('userPassword').value = '';
+    document.getElementById('userRole').value = '';
+    document.getElementById('userName').value = '';
+    document.getElementById('userFormCard').style.display = 'block';
+}
+
+function editUser(id, username, role, name) {
+    document.getElementById('userFormTitle').textContent = '编辑用户';
+    document.getElementById('userId').value = id;
+    document.getElementById('userUsername').value = username;
+    document.getElementById('userPassword').value = '';
+    document.getElementById('userRole').value = role;
+    document.getElementById('userName').value = name;
+    document.getElementById('userFormCard').style.display = 'block';
+}
+
+function hideUserForm() {
+    document.getElementById('userFormCard').style.display = 'none';
+}
+
+async function deleteUser(id) {
+    if (!confirm('确定要删除该用户吗？')) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/users/${id}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) {
+            showToast('用户删除成功', 'success');
+            loadUsers();
+        } else {
+            showToast('删除失败：' + result.message, 'error');
+        }
+    } catch (e) {
+        showToast('网络错误', 'error');
+    }
+}
+
+// ============================================================
+// 导出 Excel
+// ============================================================
+function exportToExcel() {
+    const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
+        '初一上期末年级排名','初一下期末年级排名','初二上期末年级排名','初二下期末年级排名','初三上期中年级排名','初三上期末排名',
+        '初三上期末分数','初三一模分数','初三二模分数','测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
+        '是否已签约','备注','负责老师','登记时间'];
+    const rows = allStudents.map(s => [
+        s.name, s.gender, s.phone1, s.phone2, s.district, s.school, s.graduation_year, s.class_name, s.grade_total,
+        s['rank_初一上'], s['rank_初一下'], s['rank_初二上'], s['rank_初二下'], s['rank_初三上期中'], s['rank_初三上期末'],
+        s['score_初三上期末'], s['score_一模'], s['score_二模'], s.test_paper, s.test_location,
+        s.math_score, s.english_score, s.total_score, s.evaluation, s.promised_class,
+        s.is_signed ? '是' : '否', s.remark, s.teacher, s.createTime
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '学生信息');
+    XLSX.writeFile(wb, `学生信息_${new Date().toLocaleDateString()}.xlsx`);
+}
+
+function downloadExcelTemplate() {
+    const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
+        '初一上期末年级排名','初一下期末年级排名','初二上期末年级排名','初二下期末年级排名','初三上期中年级排名','初三上期末排名',
+        '初三上期末分数','初三一模分数','初三二模分数','测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
+        '是否已签约','负责老师'];
+    const example = ['张三','男','13800000001','13900000002','高新区','某中学','2024','初三(1)班','500',
+        '10','8','12','9','7','6','560','580','590','2024年测评卷','高新校区','120','110','580','A','创新班',
+        '否','王老师'];
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '学生信息模板');
+    XLSX.writeFile(wb, '学生信息导入模板.xlsx');
+}
+
+// ============================================================
+// Excel导入签约审核流程
+// ============================================================
+function resetSignPage() {
+    signPreviewStudents = [];
+    document.getElementById('signStep1').style.display = 'block';
+    document.getElementById('signStep2').style.display = 'none';
+    document.getElementById('signStep3').style.display = 'none';
+    setSignStep(1);
+    document.getElementById('excelFileInput').value = '';
+    document.getElementById('uploadStatus').style.display = 'none';
+    document.getElementById('uploadZone').classList.remove('dragover');
+}
+
+function setSignStep(n) {
+    for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById(`step${i}Indicator`);
+        if (!el) continue;
+        el.classList.remove('active', 'done');
+        if (i < n) el.classList.add('done');
+        else if (i === n) el.classList.add('active');
+    }
+}
+
+function handleExcelDrop(event) {
+    event.preventDefault();
+    document.getElementById('uploadZone').classList.remove('dragover');
+    const file = event.dataTransfer.files[0];
+    if (file) processExcelFile(file);
+}
+
+function handleExcelUpload(input) {
+    const file = input.files[0];
+    if (file) processExcelFile(file);
+}
+
+async function processExcelFile(file) {
+    const status = document.getElementById('uploadStatus');
+    status.style.display = 'block';
+    status.className = 'upload-status loading';
+    status.textContent = '正在解析文件...';
+
+    const fd = new FormData();
+    fd.append('file', file);
+
+    try {
+        const res = await fetch(`${API_BASE}/api/preview-excel`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            signPreviewStudents = data.students;
+            status.className = 'upload-status success';
+            status.textContent = `✓ 解析成功，共读取 ${data.total} 条学生记录`;
+            setTimeout(() => { showSignStep2(); }, 800);
+        } else {
+            status.className = 'upload-status error';
+            status.textContent = '✗ 解析失败：' + data.message;
+        }
+    } catch (e) {
+        status.className = 'upload-status error';
+        status.textContent = '✗ 网络错误，请重试';
+    }
+}
+
+function showSignStep2() {
+    document.getElementById('signStep1').style.display = 'none';
+    document.getElementById('signStep2').style.display = 'block';
+    document.getElementById('signStep3').style.display = 'none';
+    setSignStep(2);
+    renderSignPreviewTable();
+    document.getElementById('signSummary').textContent = `共 ${signPreviewStudents.length} 条记录`;
+}
+
+function renderSignPreviewTable() {
+    const tbody = document.getElementById('signPreviewBody');
+    tbody.innerHTML = '';
+    signPreviewStudents.forEach((s, idx) => {
+        const tr = document.createElement('tr');
+        tr.dataset.idx = idx;
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td><span class="cell-val">${s.name || ''}</span></td>
+            <td><span class="cell-val">${s.gender || ''}</span></td>
+            <td><span class="cell-val">${s.phone1 || ''}</span></td>
+            <td><span class="cell-val">${s.phone2 || ''}</span></td>
+            <td><span class="cell-val">${s.district || ''}</span></td>
+            <td><span class="cell-val">${s.school || ''}</span></td>
+            <td><span class="cell-val">${s.graduation_year || ''}</span></td>
+            <td><span class="cell-val">${s.class_name || ''}</span></td>
+            <td><span class="cell-val">${s.grade_total || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初一上'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初一下'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初二上'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初二下'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初三上期中'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初三上期末'] || ''}</span></td>
+            <td><span class="cell-val">${s['score_初三上期末'] || ''}</span></td>
+            <td><span class="cell-val">${s['score_一模'] || ''}</span></td>
+            <td><span class="cell-val">${s['score_二模'] || ''}</span></td>
+            <td><span class="cell-val">${s.test_paper || ''}</span></td>
+            <td><span class="cell-val">${s.test_location || ''}</span></td>
+            <td><span class="cell-val">${s.math_score || ''}</span></td>
+            <td><span class="cell-val">${s.english_score || ''}</span></td>
+            <td><span class="cell-val">${s.total_score || ''}</span></td>
+            <td><span class="cell-val">${s.evaluation || ''}</span></td>
+            <td><span class="cell-val">${s.promised_class || ''}</span></td>
+            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
+            <td><span class="cell-val">${s.reason || ''}</span></td>
+            <td><span class="cell-val">${s.remark || ''}</span></td>
+            <td><span class="cell-val">${s.teacher || ''}</span></td>
+            <td>
+                <button class="btn-table btn-edit" onclick="openSignEditModal(${idx})">编辑</button>
+                <button class="btn-table btn-delete" onclick="removeSignRow(${idx})">移除</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function removeSignRow(idx) {
+    if (!confirm('确定移除该条记录吗？')) return;
+    signPreviewStudents.splice(idx, 1);
+    renderSignPreviewTable();
+    document.getElementById('signSummary').textContent = `共 ${signPreviewStudents.length} 条记录`;
+}
+
+function openSignEditModal(idx) {
+    const s = signPreviewStudents[idx];
+    document.getElementById('signEditIndex').value = idx;
+    document.getElementById('signEditName').value = s.name || '';
+    document.getElementById('signEditGender').value = s.gender || '';
+    document.getElementById('signEditPhone1').value = s.phone1 || '';
+    document.getElementById('signEditPhone2').value = s.phone2 || '';
+    document.getElementById('signEditDistrict').value = s.district || '';
+    document.getElementById('signEditSchool').value = s.school || '';
+    document.getElementById('signEditGradYear').value = s.graduation_year || '';
+    document.getElementById('signEditClass').value = s.class_name || '';
+    document.getElementById('signEditGradeTotal').value = s.grade_total || '';
+    document.getElementById('signEditRank1a').value = s['rank_初一上'] || '';
+    document.getElementById('signEditRank1b').value = s['rank_初一下'] || '';
+    document.getElementById('signEditRank2a').value = s['rank_初二上'] || '';
+    document.getElementById('signEditRank2b').value = s['rank_初二下'] || '';
+    document.getElementById('signEditRank3mid').value = s['rank_初三上期中'] || '';
+    document.getElementById('signEditRank3end').value = s['rank_初三上期末'] || '';
+    document.getElementById('signEditScore3end').value = s['score_初三上期末'] || '';
+    document.getElementById('signEditScore1m').value = s['score_一模'] || '';
+    document.getElementById('signEditScore2m').value = s['score_二模'] || '';
+    document.getElementById('signEditTestPaper').value = s.test_paper || '';
+    document.getElementById('signEditTestLoc').value = s.test_location || '';
+    document.getElementById('signEditMath').value = s.math_score || '';
+    document.getElementById('signEditEnglish').value = s.english_score || '';
+    document.getElementById('signEditTotal').value = s.total_score || '';
+    document.getElementById('signEditEval').value = s.evaluation || '';
+    document.getElementById('signEditPromised').value = s.promised_class || '';
+    document.getElementById('signEditIsSigned').value = s.is_signed || 0;
+    document.getElementById('signEditReason').value = s.reason || '';
+    document.getElementById('signEditTeacher').value = s.teacher || '';
+    document.getElementById('signEditRemark').value = s.remark || '';
+    document.getElementById('signEditModal').style.display = 'flex';
+}
+
+function closeSignEditModal(event) {
+    if (event && event.target !== document.getElementById('signEditModal')) return;
+    document.getElementById('signEditModal').style.display = 'none';
+}
+
+function saveSignEdit() {
+    const idx = parseInt(document.getElementById('signEditIndex').value);
+    signPreviewStudents[idx] = {
+        name: document.getElementById('signEditName').value,
+        gender: document.getElementById('signEditGender').value,
+        phone1: document.getElementById('signEditPhone1').value,
+        phone2: document.getElementById('signEditPhone2').value,
+        district: document.getElementById('signEditDistrict').value,
+        school: document.getElementById('signEditSchool').value,
+        graduation_year: document.getElementById('signEditGradYear').value || null,
+        class_name: document.getElementById('signEditClass').value,
+        grade_total: document.getElementById('signEditGradeTotal').value || null,
+        'rank_初一上': document.getElementById('signEditRank1a').value || null,
+        'rank_初一下': document.getElementById('signEditRank1b').value || null,
+        'rank_初二上': document.getElementById('signEditRank2a').value || null,
+        'rank_初二下': document.getElementById('signEditRank2b').value || null,
+        'rank_初三上期中': document.getElementById('signEditRank3mid').value || null,
+        'rank_初三上期末': document.getElementById('signEditRank3end').value || null,
+        'score_初三上期末': document.getElementById('signEditScore3end').value,
+        'score_一模': document.getElementById('signEditScore1m').value,
+        'score_二模': document.getElementById('signEditScore2m').value,
+        test_paper: document.getElementById('signEditTestPaper').value,
+        test_location: document.getElementById('signEditTestLoc').value,
+        math_score: document.getElementById('signEditMath').value,
+        english_score: document.getElementById('signEditEnglish').value,
+        total_score: document.getElementById('signEditTotal').value,
+        evaluation: document.getElementById('signEditEval').value,
+        promised_class: document.getElementById('signEditPromised').value,
+        is_signed: parseInt(document.getElementById('signEditIsSigned').value),
+        reason: document.getElementById('signEditReason').value,
+        teacher: document.getElementById('signEditTeacher').value,
+        remark: document.getElementById('signEditRemark').value,
+        score: document.getElementById('signEditTotal').value,
+        file_path: ''
+    };
+    document.getElementById('signEditModal').style.display = 'none';
+    renderSignPreviewTable();
+}
+
+function proceedToConfirm() {
+    if (signPreviewStudents.length === 0) {
+        showToast('没有学生数据，请先上传Excel文件', 'error');
+        return;
+    }
+    document.getElementById('signStep2').style.display = 'none';
+    document.getElementById('signStep3').style.display = 'block';
+    setSignStep(3);
+
+    const signedCount = signPreviewStudents.filter(s => s.is_signed).length;
+    const summary = document.getElementById('confirmSummary');
+    summary.innerHTML = `
+        <div class="confirm-stat">
+            <div class="stat-item">
+                <div class="stat-num">${signPreviewStudents.length}</div>
+                <div class="stat-label">学生总数</div>
+            </div>
+            <div class="stat-item stat-signed">
+                <div class="stat-num">${signedCount}</div>
+                <div class="stat-label">已签约</div>
+            </div>
+            <div class="stat-item stat-unsigned">
+                <div class="stat-num">${signPreviewStudents.length - signedCount}</div>
+                <div class="stat-label">未签约</div>
+            </div>
+        </div>
+        <p style="margin-top: 15px; color: #555;">操作人：<strong>${currentUser.name}</strong>　提交时间：<strong>${new Date().toLocaleString()}</strong></p>
+    `;
+}
+
+function backToReview() {
+    document.getElementById('signStep3').style.display = 'none';
+    document.getElementById('signStep2').style.display = 'block';
+    setSignStep(2);
+}
+
+async function confirmBatchSign() {
+    const btn = document.getElementById('confirmSignBtn');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+    try {
+        const res = await fetch(`${API_BASE}/api/batch-sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ students: signPreviewStudents, teacher: currentUser.name })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast('✓ ' + result.message, 'success');
+            setTimeout(() => switchToAdmin(), 1200);
+        } else {
+            showToast('签约失败：' + result.message, 'error');
+            btn.disabled = false;
+            btn.textContent = '确认签约';
+        }
+    } catch (e) {
+        showToast('网络错误，请重试', 'error');
+        btn.disabled = false;
+        btn.textContent = '确认签约';
+    }
+}
+
+// ============================================================
+// 试卷浏览
+// ============================================================
+async function loadExamPapers() {
+    const container = document.getElementById('paperListContainer');
+    container.innerHTML = '<div style="text-align:center;color:#999;padding:30px;">加载中...</div>';
+    try {
+        const res = await fetch(`${API_BASE}/api/exam-papers`);
+        const papers = await res.json();
+        if (papers.length === 0) {
+            container.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">暂无试卷，请上传试卷文件</div>';
+            return;
+        }
+        container.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'paper-grid';
+        papers.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'paper-card';
+            const ext = p.file_path.split('.').pop().toLowerCase();
+            const icon = ext === 'pdf' ? '📄' : '🖼️';
+            card.innerHTML = `
+                <div class="paper-icon">${icon}</div>
+                <div class="paper-info">
+                    <div class="paper-title">${p.title}</div>
+                    ${p.year ? `<div class="paper-meta">年份：${p.year}</div>` : ''}
+                    ${p.description ? `<div class="paper-meta">${p.description}</div>` : ''}
+                    <div class="paper-meta">上传人：${p.uploader} &nbsp;|&nbsp; ${p.upload_time}</div>
+                </div>
+                <div class="paper-actions">
+                    <button class="btn btn-primary" style="width:auto;padding:8px 18px;" onclick="previewPaper('${p.file_path}', '${p.title}')">预览</button>
+                    ${currentUser && currentUser.role !== 'teacher' ? `<button class="btn btn-danger" style="width:auto;padding:8px 14px;" onclick="deletePaper(${p.id})">删除</button>` : ''}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        container.appendChild(grid);
+    } catch (e) {
+        container.innerHTML = '<div style="text-align:center;color:#dc3545;padding:30px;">加载失败，请刷新重试</div>';
+    }
+}
+
+function previewPaper(filePath, title) {
+    const ext = filePath.split('.').pop().toLowerCase();
+    const url = `/uploads/${filePath}`;
+    document.getElementById('pdfModalTitle').textContent = title;
+    if (ext === 'pdf') {
+        document.getElementById('pdfFrame').src = url;
+    } else {
+        document.getElementById('pdfFrame').src = '';
+        document.getElementById('pdfFrame').srcdoc = `<img src="${url}" style="max-width:100%;display:block;margin:auto;">`;
+    }
+    document.getElementById('pdfModal').style.display = 'flex';
+}
+
+function closePdfModal(event) {
+    if (event && event.target !== document.getElementById('pdfModal')) return;
+    document.getElementById('pdfModal').style.display = 'none';
+    document.getElementById('pdfFrame').src = '';
+}
+
+async function deletePaper(id) {
+    if (!confirm('确定要删除该试卷吗？')) return;
+    const res = await fetch(`${API_BASE}/api/exam-papers/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (result.success) {
+        showToast('试卷删除成功', 'success');
+        loadExamPapers();
+    } else {
+        showToast('删除失败：' + result.message, 'error');
+    }
+}
