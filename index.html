@@ -38,7 +38,6 @@
             <div class="header-right">
                 <span id="currentUser"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()" id="adminBtn" style="display: none;">学生管理</button>
-                <button class="btn btn-outline" onclick="switchToSignContract()">导入签约</button>
                 <button class="btn btn-outline" onclick="switchToExamPapers()">试卷浏览</button>
                 <button class="btn btn-outline" onclick="showChangePwdModal()">修改密码</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -80,7 +79,7 @@
             <h1>二中高新招生签约系统</h1>
             <div class="header-right">
                 <span id="currentUserAdmin"></span>
-                <button class="btn btn-outline" onclick="switchToSignContract()">导入签约</button>
+                <button class="btn btn-outline" id="navSignBtn" onclick="switchToRegister()" style="display:none;">新增签约</button>
                 <button class="btn btn-outline" onclick="switchToExamPapers()">试卷浏览</button>
                 <button class="btn btn-stats" id="statsBtn" onclick="switchToStats()" style="display:none;">数据统计</button>
                 <button class="btn btn-outline" id="logsBtn" onclick="switchToLogs()" style="display:none;">操作日志</button>
@@ -95,7 +94,7 @@
                 <!-- 操作工具栏 -->
                 <div id="adminToolbar" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center;">
                     <button id="btnNewStudent" class="btn btn-primary" onclick="switchToAddStudent()">新增学生</button>
-                    <button id="btnImportSign" class="btn btn-primary" onclick="switchToSignContract()">导入签约</button>
+                    <button id="btnImportSign" class="btn btn-primary" onclick="switchToSignContract()">导入数据</button>
                     <button id="btnExport" class="btn btn-secondary" onclick="exportToExcel()">导出数据</button>
                     <button id="btnTemplate" class="btn btn-secondary" onclick="downloadExcelTemplate()">下载模板</button>
                 </div>

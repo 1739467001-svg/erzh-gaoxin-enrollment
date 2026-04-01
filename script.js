@@ -90,6 +90,9 @@ function switchToAdmin() {
     document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
     document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
     document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    // 右上角“新增签约”按钮：管理员和超级管理员可见（在试卷浏览左边）
+    const navSignBtn = document.getElementById('navSignBtn');
+    if (navSignBtn) navSignBtn.style.display = isManager ? 'inline-block' : 'none';
     // 工具栏按钮权限：teacher 只能看到导出和下载模板
     const adminToolbar = document.getElementById('adminToolbar');
     if (adminToolbar) {
