@@ -21,8 +21,9 @@ body {
 .login-page {
     width: 100%;
     height: 100vh;
-    background-color: #e8f0f8;
-    background-position: center center;
+    background-color: #c8d8e8;
+    /* 背景图居中偏下，让建筑主体（门楼）处于视觉中心 */
+    background-position: center 60%;
     background-size: cover;
     background-repeat: no-repeat;
     display: flex !important;
@@ -31,12 +32,19 @@ body {
     position: fixed !important;
     top: 0; left: 0;
     z-index: 10;
+    overflow: hidden;
 }
 
+/* 渐变遮罩：底部深、顶部浅，让登录框更突出，背景图依然清晰可见 */
 .login-bg-mask {
     position: absolute;
     inset: 0;
-    background: rgba(255,255,255,0.35);
+    background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.10) 0%,
+        rgba(255,255,255,0.22) 40%,
+        rgba(26,58,107,0.28) 100%
+    );
     z-index: 0;
 }
 
@@ -54,19 +62,23 @@ body {
 .login-title {
     font-size: 30px;
     font-weight: 700;
-    color: #1a3a6b;
-    text-shadow: 0 2px 16px rgba(255,255,255,0.9), 0 0 40px rgba(255,255,255,0.6);
+    color: #fff;
+    /* 白色文字 + 深色阴影，在学校建筑背景上清晰可读 */
+    text-shadow: 0 2px 12px rgba(26,58,107,0.7), 0 0 32px rgba(26,58,107,0.5), 0 1px 0 rgba(0,0,0,0.3);
     letter-spacing: 3px;
     text-align: center;
 }
 
 .login-box {
-    background: rgba(255,255,255,0.97);
+    background: rgba(255,255,255,0.95);
     border-radius: 16px;
     padding: 40px 48px;
     width: 420px;
     max-width: 94vw;
-    box-shadow: 0 8px 48px rgba(26,58,107,0.18);
+    box-shadow: 0 12px 60px rgba(26,58,107,0.30), 0 2px 8px rgba(0,0,0,0.12);
+    /* 轻微毛玻璃效果 */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .login-box h2 {
@@ -878,8 +890,23 @@ tbody td {
     .form-row  { grid-template-columns: 1fr; }
     .form-grid { grid-template-columns: 1fr; }
     .paper-grid { grid-template-columns: 1fr; }
-    .login-box  { padding: 28px 24px; }
-    .login-title { font-size: 22px; }
+    .login-box  { padding: 28px 20px; width: 100%; max-width: 400px; }
+    .login-title { font-size: 22px; letter-spacing: 2px; }
+    /* 手机端背景图聚焦建筑正门 */
+    .login-page { background-position: center 55%; }
+}
+
+/* 平板端（768px ~ 1024px）适配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .login-page { background-position: center 58%; }
+    .login-title { font-size: 26px; }
+    .login-box { padding: 36px 36px; }
+}
+
+/* 超宽屏（>1600px）适配：背景图不过度拉伸 */
+@media (min-width: 1600px) {
+    .login-page { background-position: center 65%; }
+    .login-title { font-size: 34px; }
 }
 
 /* ===================================================
