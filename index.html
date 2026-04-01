@@ -98,18 +98,54 @@
                     <button id="btnExport" class="btn btn-secondary" onclick="exportToExcel()">导出数据</button>
                     <button id="btnTemplate" class="btn btn-secondary" onclick="downloadExcelTemplate()">下载模板</button>
                 </div>
-                <!-- 高级筛选 -->
-                <div class="filter-bar">
-                    <input type="text" id="searchInput" placeholder="搜索姓名/学校/电话..." oninput="applyFilters()">
-                    <select id="filterSigned" onchange="applyFilters()">
-                        <option value="">全部签约状态</option>
-                        <option value="1">已签约</option>
-                        <option value="0">未签约</option>
-                    </select>
-                    <input type="text" id="filterDistrict" placeholder="行政区筛选" oninput="applyFilters()">
-                    <input type="text" id="filterTeacher" placeholder="负责老师筛选" oninput="applyFilters()">
-                    <input type="text" id="filterClass" placeholder="承诺班型筛选" oninput="applyFilters()">
-                    <button class="btn btn-secondary" onclick="clearFilters()">清空筛选</button>
+                <!-- 筛选区域 -->
+                <div class="filter-section" id="filterSection">
+                    <!-- 第一行：搜索框 + 高级筛选开关 + 筛选标签 -->
+                    <div class="filter-row-main">
+                        <div class="filter-search-wrap">
+                            <span class="filter-search-icon">🔍</span>
+                            <input type="text" id="searchInput" class="filter-search-input" placeholder="搜索姓名 / 学校 / 电话..." oninput="applyFilters()">
+                        </div>
+                        <div class="filter-actions">
+                            <span id="filterActiveTag" class="filter-active-tag" style="display:none;"></span>
+                            <button class="btn-filter-toggle" id="filterToggleBtn" onclick="toggleAdvancedFilter()">
+                                <span id="filterToggleText">高级筛选</span>
+                                <span id="filterToggleArrow" class="filter-arrow">▼</span>
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearFilters()" style="height:36px;padding:0 14px;font-size:13px;">重置</button>
+                        </div>
+                    </div>
+                    <!-- 第二行：高级筛选项（可折叠） -->
+                    <div class="filter-advanced" id="filterAdvanced" style="display:none;">
+                        <div class="filter-grid">
+                            <div class="filter-item">
+                                <label class="filter-label">签约状态</label>
+                                <select id="filterSigned" onchange="applyFilters()">
+                                    <option value="">全部</option>
+                                    <option value="1">已签约</option>
+                                    <option value="0">未签约</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label class="filter-label">行政区</label>
+                                <select id="filterDistrict" onchange="applyFilters()">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label class="filter-label">负责老师</label>
+                                <select id="filterTeacher" onchange="applyFilters()">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label class="filter-label">承诺班型</label>
+                                <select id="filterClass" onchange="applyFilters()">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table id="studentTable">

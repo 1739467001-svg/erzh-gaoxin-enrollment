@@ -365,8 +365,62 @@ async function loadStudents() {
         const res = await fetch(url);
         allStudents = await res.json();
         renderStudentTable(allStudents);
+        populateFilterOptions(allStudents);
     } catch (e) {
         console.error('加载学生数据失败', e);
+    }
+}
+
+// 动态填充筛选下拉选项
+function populateFilterOptions(students) {
+    const districts = [...new Set(students.map(s => s.district).filter(Boolean))].sort();
+    const teachers  = [...new Set(students.map(s => s.teacher).filter(Boolean))].sort();
+    const classes   = [...new Set(students.map(s => s.promised_class).filter(Boolean))].sort();
+
+    function fillSelect(id, values) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">全部</option>';
+        values.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = v;
+            sel.appendChild(opt);
+        });
+        if (cur) sel.value = cur;
+    }
+    fillSelect('filterDistrict', districts);
+    fillSelect('filterTeacher', teachers);
+    fillSelect('filterClass', classes);
+}
+
+// 切换高级筛选展开/折叠
+function toggleAdvancedFilter() {
+    const adv = document.getElementById('filterAdvanced');
+    const btn = document.getElementById('filterToggleBtn');
+    const arrow = document.getElementById('filterToggleArrow');
+    const text = document.getElementById('filterToggleText');
+    const isOpen = adv.style.display !== 'none';
+    adv.style.display = isOpen ? 'none' : 'block';
+    arrow.classList.toggle('open', !isOpen);
+    btn.classList.toggle('active', !isOpen);
+    text.textContent = isOpen ? '高级筛选' : '收起筛选';
+}
+
+// 更新筛选激活标签
+function updateFilterActiveTag() {
+    const signed   = document.getElementById('filterSigned')?.value || '';
+    const district = document.getElementById('filterDistrict')?.value || '';
+    const teacher  = document.getElementById('filterTeacher')?.value || '';
+    const cls      = document.getElementById('filterClass')?.value || '';
+    const count = [signed, district, teacher, cls].filter(Boolean).length;
+    const tag = document.getElementById('filterActiveTag');
+    if (!tag) return;
+    if (count > 0) {
+        tag.style.display = 'inline-flex';
+        tag.textContent = `已筛选 ${count} 项`;
+    } else {
+        tag.style.display = 'none';
     }
 }
 
@@ -422,11 +476,11 @@ function renderStudentTable(students) {
 
 // 高级筛选（客户端过滤）
 function applyFilters() {
-    const keyword = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-    const signed = document.getElementById('filterSigned').value;
-    const district = (document.getElementById('filterDistrict').value || '').trim().toLowerCase();
-    const teacher = (document.getElementById('filterTeacher').value || '').trim().toLowerCase();
-    const cls = (document.getElementById('filterClass').value || '').trim().toLowerCase();
+    const keyword  = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+    const signed   = document.getElementById('filterSigned')?.value || '';
+    const district = document.getElementById('filterDistrict')?.value || '';
+    const teacher  = document.getElementById('filterTeacher')?.value || '';
+    const cls      = document.getElementById('filterClass')?.value || '';
 
     const filtered = allStudents.filter(s => {
         if (keyword && !(
@@ -435,20 +489,27 @@ function applyFilters() {
             (s.phone1 || '').includes(keyword)
         )) return false;
         if (signed !== '' && String(s.is_signed) !== signed) return false;
-        if (district && !(s.district || '').toLowerCase().includes(district)) return false;
-        if (teacher && !(s.teacher || '').toLowerCase().includes(teacher)) return false;
-        if (cls && !(s.promised_class || '').toLowerCase().includes(cls)) return false;
+        if (district && (s.district || '') !== district) return false;
+        if (teacher  && (s.teacher  || '') !== teacher)  return false;
+        if (cls      && (s.promised_class || '') !== cls) return false;
         return true;
     });
+    updateFilterActiveTag();
     renderStudentTable(filtered);
 }
 
 function clearFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterSigned').value = '';
-    document.getElementById('filterDistrict').value = '';
-    document.getElementById('filterTeacher').value = '';
-    document.getElementById('filterClass').value = '';
+    const si = document.getElementById('searchInput');
+    const fs = document.getElementById('filterSigned');
+    const fd = document.getElementById('filterDistrict');
+    const ft = document.getElementById('filterTeacher');
+    const fc = document.getElementById('filterClass');
+    if (si) si.value = '';
+    if (fs) fs.value = '';
+    if (fd) fd.value = '';
+    if (ft) ft.value = '';
+    if (fc) fc.value = '';
+    updateFilterActiveTag();
     renderStudentTable(allStudents);
 }
 
