@@ -93,11 +93,11 @@
             <div class="table-card">
                 <h2>学生登记信息列表</h2>
                 <!-- 操作工具栏 -->
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center;">
-                    <button class="btn btn-primary" onclick="switchToAddStudent()">新增学生</button>
-                    <button class="btn btn-primary" onclick="switchToSignContract()">导入签约</button>
-                    <button class="btn btn-secondary" onclick="exportToExcel()">导出数据</button>
-                    <button class="btn btn-secondary" onclick="downloadExcelTemplate()">下载模板</button>
+                <div id="adminToolbar" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center;">
+                    <button id="btnNewStudent" class="btn btn-primary" onclick="switchToAddStudent()">新增学生</button>
+                    <button id="btnImportSign" class="btn btn-primary" onclick="switchToSignContract()">导入签约</button>
+                    <button id="btnExport" class="btn btn-secondary" onclick="exportToExcel()">导出数据</button>
+                    <button id="btnTemplate" class="btn btn-secondary" onclick="downloadExcelTemplate()">下载模板</button>
                 </div>
                 <!-- 高级筛选 -->
                 <div class="filter-bar">

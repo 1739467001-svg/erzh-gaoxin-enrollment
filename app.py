@@ -338,16 +338,25 @@ def update_student(student_id):
 
 @app.route('/api/students/<int:student_id>', methods=['DELETE'])
 def delete_student(student_id):
+    operator_name = request.args.get('operator_name', 'system')
+    operator_role = request.args.get('operator_role', '')
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute('SELECT name FROM students WHERE id = ?', (student_id,))
+        c.execute('SELECT name, teacher FROM students WHERE id = ?', (student_id,))
         row = c.fetchone()
-        name = row['name'] if row else str(student_id)
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'message': '学生不存在'})
+        name = row['name']
+        # teacher 角色只能删除自己登记的学生
+        if operator_role == 'teacher' and row['teacher'] != operator_name:
+            conn.close()
+            return jsonify({'success': False, 'message': '权限不足，只能删除自己登记的学生'})
         c.execute('DELETE FROM students WHERE id = ?', (student_id,))
         conn.commit()
         conn.close()
-        add_log('system', '删除学生', name, f"ID:{student_id}")
+        add_log(operator_name, '删除学生', name, f"ID:{student_id}")
         return jsonify({'success': True})
     except Exception as e:
         conn.close()
@@ -696,6 +705,10 @@ def get_exam_papers():
 
 @app.route('/api/exam-papers', methods=['POST'])
 def upload_exam_paper():
+    # 仅超级管理员（admin）可上传试卷
+    operator_role = request.form.get('operator_role', '')
+    if operator_role != 'admin':
+        return jsonify({'success': False, 'message': '权限不足，仅超级管理员可上传试卷'})
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': '未上传文件'})
     file = request.files['file']
@@ -730,6 +743,11 @@ def upload_exam_paper():
 
 @app.route('/api/exam-papers/<int:paper_id>', methods=['DELETE'])
 def delete_exam_paper(paper_id):
+    # 仅超级管理员（admin）可删除试卷
+    operator_role = request.args.get('operator_role', '')
+    operator_name = request.args.get('operator_name', 'admin')
+    if operator_role != 'admin':
+        return jsonify({'success': False, 'message': '权限不足，仅超级管理员可删除试卷'})
     conn = get_db()
     c = conn.cursor()
     try:
@@ -739,7 +757,7 @@ def delete_exam_paper(paper_id):
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], paper['file_path'])
             if os.path.exists(filepath):
                 os.remove(filepath)
-            add_log('admin', '删除试卷', paper['title'], f"ID:{paper_id}")
+            add_log(operator_name, '删除试卷', paper['title'], f"ID:{paper_id}")
         c.execute('DELETE FROM exam_papers WHERE id = ?', (paper_id,))
         conn.commit()
         conn.close()

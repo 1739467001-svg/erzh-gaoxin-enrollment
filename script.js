@@ -55,11 +55,9 @@ function logout() {
 }
 
 function showMainPage() {
-    if (currentUser.role === 'teacher') {
-        switchToRegister();
-    } else {
-        switchToAdmin();
-    }
+    // 所有角色登录后都进入学生管理页（adminPage）
+    // teacher 登录后也直接进入学生管理，但只能看到自己的学生
+    switchToAdmin();
 }
 
 // ============================================================
@@ -78,6 +76,7 @@ function showPage(pageId) {
 function switchToRegister() {
     showPage('registerPage');
     document.getElementById('currentUser').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    // 管理员及以上才显示“学生管理”按钮
     document.getElementById('adminBtn').style.display = (currentUser.role !== 'teacher') ? 'inline-block' : 'none';
 }
 
@@ -86,9 +85,23 @@ function switchToAdmin() {
     document.getElementById('currentUserAdmin').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
     const isAdmin = currentUser.role === 'admin';
     const isManager = currentUser.role === 'admin' || currentUser.role === 'manager';
+    const isTeacher = currentUser.role === 'teacher';
+    // 导航按钮权限
     document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
     document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
     document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    // 工具栏按钮权限：teacher 只能看到导出和下载模板
+    const adminToolbar = document.getElementById('adminToolbar');
+    if (adminToolbar) {
+        const btnNewStudent = document.getElementById('btnNewStudent');
+        const btnImportSign = document.getElementById('btnImportSign');
+        const btnExport = document.getElementById('btnExport');
+        const btnTemplate = document.getElementById('btnTemplate');
+        if (btnNewStudent) btnNewStudent.style.display = isTeacher ? 'none' : 'inline-block';
+        if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
+        if (btnExport) btnExport.style.display = 'inline-block';
+        if (btnTemplate) btnTemplate.style.display = 'inline-block';
+    }
     loadStudents();
 }
 
@@ -113,18 +126,15 @@ function switchToSignContract() {
 function switchToExamPapers() {
     showPage('examPapersPage');
     document.getElementById('currentUserExam').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    // 仅教师及以上（非普通访客）可上传试卷
-    const canUpload = currentUser && ['admin', 'manager', 'teacher'].includes(currentUser.role);
+    // 试卷上传仅超级管理员（admin）可见
+    const canUpload = currentUser && currentUser.role === 'admin';
     document.getElementById('uploadPaperCard').style.display = canUpload ? 'block' : 'none';
     loadExamPapers();
 }
 
 function backFromExamPapers() {
-    if (currentUser.role === 'teacher') {
-        switchToRegister();
-    } else {
-        switchToAdmin();
-    }
+    // 所有角色返回学生管理页
+    switchToAdmin();
 }
 
 async function switchToStats() {
@@ -142,6 +152,18 @@ async function switchToLogs() {
 function roleLabel(role) {
     const map = { admin: '超级管理员', manager: '管理员', teacher: '签约老师' };
     return map[role] || role;
+}
+
+/**
+ * 判断当前用户是否可以编辑/删除某个学生
+ * - 超级管理员和管理员：可操作所有学生
+ * - 签约老师：只能操作自己登记的学生
+ */
+function canEditDelete(student) {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin' || currentUser.role === 'manager') return true;
+    if (currentUser.role === 'teacher') return student.teacher === currentUser.name;
+    return false;
 }
 
 // ============================================================
@@ -332,7 +354,12 @@ function getLogBadgeClass(action) {
 // ============================================================
 async function loadStudents() {
     try {
-        const res = await fetch(`${API_BASE}/api/students`);
+        // teacher 角色只加载自己登记的学生
+        let url = `${API_BASE}/api/students`;
+        if (currentUser && currentUser.role === 'teacher') {
+            url += `?teacher=${encodeURIComponent(currentUser.name)}`;
+        }
+        const res = await fetch(url);
         allStudents = await res.json();
         renderStudentTable(allStudents);
     } catch (e) {
@@ -382,8 +409,8 @@ function renderStudentTable(students) {
             <td>${s.teacher || ''}</td>
             <td>${s.createTime || ''}</td>
             <td>
-                <button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>
-                <button class="btn-table btn-delete" onclick="deleteStudent(${s.id})">删除</button>
+                ${canEditDelete(s) ? `<button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>` : ''}
+                ${canEditDelete(s) ? `<button class="btn-table btn-delete" onclick="deleteStudent(${s.id})">删除</button>` : ''}
             </td>
         `;
         tbody.appendChild(tr);
@@ -638,6 +665,7 @@ message, 'error');
             fd.append('year', document.getElementById('paperYear').value);
             fd.append('description', document.getElementById('paperDesc').value);
             fd.append('uploader', currentUser.name);
+            fd.append('operator_role', currentUser.role);
             try {
                 const res = await fetch(`${API_BASE}/api/exam-papers`, { method: 'POST', body: fd });
                 const result = await res.json();
@@ -710,7 +738,11 @@ async function editStudent(id) {
 async function deleteStudent(id) {
     if (!confirm('确定要删除该学生记录吗？此操作不可恢复！')) return;
     try {
-        const res = await fetch(`${API_BASE}/api/students/${id}`, { method: 'DELETE' });
+        const params = new URLSearchParams({
+            operator_name: currentUser.name,
+            operator_role: currentUser.role
+        });
+        const res = await fetch(`${API_BASE}/api/students/${id}?${params}`, { method: 'DELETE' });
         const result = await res.json();
         if (result.success) {
             showToast('删除成功', 'success');
@@ -1123,7 +1155,7 @@ async function loadExamPapers() {
                 </div>
                 <div class="paper-actions">
                     <button class="btn btn-primary" style="width:auto;padding:8px 18px;" onclick="previewPaper('${p.file_path}', '${p.title}')">预览</button>
-                    ${currentUser && currentUser.role !== 'teacher' ? `<button class="btn btn-danger" style="width:auto;padding:8px 14px;" onclick="deletePaper(${p.id})">删除</button>` : ''}
+                    ${currentUser && currentUser.role === 'admin' ? `<button class="btn btn-danger" style="width:auto;padding:8px 14px;" onclick="deletePaper(${p.id})">删除</button>` : ''}
                 </div>
             `;
             grid.appendChild(card);
@@ -1155,7 +1187,11 @@ function closePdfModal(event) {
 
 async function deletePaper(id) {
     if (!confirm('确定要删除该试卷吗？')) return;
-    const res = await fetch(`${API_BASE}/api/exam-papers/${id}`, { method: 'DELETE' });
+    const params = new URLSearchParams({
+        operator_role: currentUser.role,
+        operator_name: currentUser.name
+    });
+    const res = await fetch(`${API_BASE}/api/exam-papers/${id}?${params}`, { method: 'DELETE' });
     const result = await res.json();
     if (result.success) {
         showToast('试卷删除成功', 'success');
