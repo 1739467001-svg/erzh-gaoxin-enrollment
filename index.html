@@ -35,7 +35,8 @@
     <div id="registerPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('registerMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="registerMenu">
                 <span id="currentUser"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()" id="adminBtn" style="display: none;">学生管理</button>
                 <button class="btn btn-outline" onclick="switchToExamPapers()">试卷浏览</button>
@@ -88,7 +89,8 @@
     <div id="adminPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('adminMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="adminMenu">
                 <span id="currentUserAdmin"></span>
                 <button class="btn btn-outline" id="navSignBtn" onclick="switchToRegister()" style="display:none;">新增签约</button>
                 <button class="btn btn-outline" onclick="switchToExamPapers()">试卷浏览</button>
@@ -182,7 +184,8 @@
     <div id="addStudentPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 新增学生</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('addStudentMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="addStudentMenu">
                 <span id="currentUserAddStudent"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()">返回管理</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -265,7 +268,8 @@
     <div id="editPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 编辑学生信息</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('editMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="editMenu">
                 <span id="currentUserEdit"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()">返回管理</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -349,7 +353,8 @@
     <div id="userManagementPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 用户管理</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('userMgmtMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="userMgmtMenu">
                 <span id="currentUserUserManagement"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()">返回管理</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -389,7 +394,8 @@
     <div id="statsPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 数据统计</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('statsMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="statsMenu">
                 <span id="currentUserStats"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()">返回管理</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -470,7 +476,8 @@
     <div id="logsPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 操作日志</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('logsMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="logsMenu">
                 <span id="currentUserLogs"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()">返回管理</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -495,7 +502,8 @@
     <div id="signContractPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 学生签约</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('signMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="signMenu">
                 <span id="currentUserSign"></span>
                 <button class="btn btn-outline" onclick="switchToAdmin()">返回管理</button>
                 <button class="btn btn-logout" onclick="logout()">退出登录</button>
@@ -605,7 +613,8 @@
     <div id="examPapersPage" class="page" style="display: none;">
         <div class="header">
             <h1>二中高新招生签约系统 - 试卷浏览</h1>
-            <div class="header-right">
+            <button class="hamburger-btn" onclick="toggleMobileMenu('examMenu')" aria-label="菜单">&#9776;</button>
+            <div class="header-right" id="examMenu">
                 <span id="currentUserExam"></span>
                 <button class="btn btn-secondary" id="backFromExamBtn" onclick="backFromExamPapers()">返回</button>
                 <button class="btn btn-danger" onclick="logout()">退出登录</button>

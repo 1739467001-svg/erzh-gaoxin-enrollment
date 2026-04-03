@@ -8,6 +8,23 @@ let signPreviewStudents = [];
 const API_BASE = '';
 
 // ============================================================
+// 手机端汉堡菜单
+// ============================================================
+function toggleMobileMenu(menuId) {
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+    menu.classList.toggle('mobile-open');
+}
+
+function closeAllMobileMenus() {
+    document.querySelectorAll('.header-right.mobile-open').forEach(m => {
+        m.classList.remove('mobile-open');
+    });
+}
+
+// (移动菜单关闭逻辑已合并到下方的document click监听器中)
+
+// ============================================================
 // 学校数据（来源：杭州初中学校Excel）
 // ============================================================
 const SCHOOL_DATA = {
@@ -82,13 +99,20 @@ function onDistrictChange(prefix) {
     onSchoolInput(prefix);
 }
 
-// 点击其他地方关闭下拉
+// 点击其他地方关闭下拉 + 关闭移动菜单
 document.addEventListener('click', function(e) {
+    // 关闭学校autocomplete下拉
     document.querySelectorAll('.school-dropdown.show').forEach(dd => {
         if (!dd.closest('.school-autocomplete-wrap').contains(e.target)) {
             dd.classList.remove('show');
         }
     });
+    // 关闭移动端汉堡菜单（点击header外部时）
+    if (!e.target.closest('.header')) {
+        document.querySelectorAll('.header-right.mobile-open').forEach(m => {
+            m.classList.remove('mobile-open');
+        });
+    }
 });
 
 // ============================================================
@@ -148,6 +172,8 @@ function showMainPage() {
 // 页面切换
 // ============================================================
 function showPage(pageId) {
+    // 切换页面时关闭所有移动端菜单
+    closeAllMobileMenus();
     document.querySelectorAll('.page').forEach(p => {
         p.style.display = 'none';
         p.style.visibility = 'hidden';

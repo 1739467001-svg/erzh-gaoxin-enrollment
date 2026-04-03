@@ -891,32 +891,207 @@ tbody td {
 .pagination-info { font-size: 13px; color: #888; margin-right: 8px; }
 
 /* ===================================================
-   响应式
+   汉堡菜单按钮（默认隐藏，手机端显示）
    =================================================== */
-@media (max-width: 768px) {
-    .content { padding: 16px; }
-    .header  { padding: 0 16px; height: auto; min-height: 58px; }
-    .header h1 { font-size: 14px; }
-    .form-row  { grid-template-columns: 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-    .paper-grid { grid-template-columns: 1fr; }
-    .login-box  { padding: 28px 20px; width: 100%; max-width: 400px; }
-    .login-title { font-size: 22px; letter-spacing: 2px; }
-    /* 手机端背景图聚焦建筑正门 */
-    .login-page { background-position: center 55%; }
+.hamburger-btn {
+    display: none;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.6);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.18s;
+    font-family: inherit;
+    line-height: 1;
+    padding: 0;
 }
+.hamburger-btn:hover { background: rgba(255,255,255,0.28); }
 
-/* 平板端（768px ~ 1024px）适配 */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .login-page { background-position: center 58%; }
-    .login-title { font-size: 26px; }
-    .login-box { padding: 36px 36px; }
-}
+/* ===================================================
+   响应式 - 全面多端适配
+   断点：手机 ≤768px | 平板 769px~1024px | 电脑 >1024px
+   =================================================== */
 
-/* 超宽屏（>1600px）适配：背景图不过度拉伸 */
+/* ---- 超宽屏（>1600px） ---- */
 @media (min-width: 1600px) {
-    .login-page { background-position: center 65%; }
+    .login-page  { background-position: center 65%; }
     .login-title { font-size: 34px; }
+    .content     { max-width: 1600px; }
+}
+
+/* ---- 平板端（769px ~ 1024px） ---- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .login-page  { background-position: center 58%; }
+    .login-title { font-size: 26px; }
+    .login-box   { padding: 36px 36px; }
+    .content     { padding: 20px; }
+    .header      { padding: 0 20px; }
+    .header h1   { font-size: 15px; }
+    .header-right { gap: 6px; }
+    .header-right .btn { font-size: 12px; padding: 0 10px; height: 30px; }
+    .form-grid   { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid  { grid-template-columns: repeat(2, 1fr); }
+    .charts-row  { grid-template-columns: 1fr; }
+    .paper-grid  { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---- 手机端（≤768px） ---- */
+@media (max-width: 768px) {
+    /* 登录页 */
+    .login-page  { background-position: center 55%; }
+    .login-title { font-size: 20px; letter-spacing: 1.5px; }
+    .login-box   { padding: 24px 18px; width: 100%; max-width: 96vw; }
+    .login-box h2 { font-size: 16px; margin-bottom: 20px; }
+    .login-box .form-group input { height: 40px; }
+    .login-box .btn-primary { height: 42px; font-size: 15px; }
+
+    /* 导航栏 - 汉堡菜单模式 */
+    .header {
+        padding: 0 14px;
+        height: auto;
+        min-height: 52px;
+        flex-wrap: wrap;
+        position: relative;
+    }
+    .header h1 {
+        font-size: 13px;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100% - 52px);
+    }
+    .hamburger-btn {
+        display: inline-flex;
+    }
+    .header-right {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 10px 0 12px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+        margin-top: 6px;
+    }
+    .header-right.mobile-open {
+        display: flex;
+    }
+    .header-right span {
+        font-size: 12px;
+        padding: 4px 0;
+        text-align: center;
+    }
+    .header-right .btn {
+        width: 100%;
+        height: 38px;
+        font-size: 13px;
+        justify-content: center;
+    }
+
+    /* 内容区域 */
+    .content { padding: 12px; }
+    .card, .form-card, .table-card { padding: 16px 14px; border-radius: 10px; }
+    .form-card h2, .table-card h2 { font-size: 14px; margin-bottom: 14px; }
+
+    /* 工具栏 */
+    #adminToolbar {
+        gap: 7px;
+    }
+    #adminToolbar .btn {
+        font-size: 12px;
+        padding: 0 10px;
+        height: 32px;
+    }
+
+    /* 筛选区域 */
+    .filter-section { padding: 12px; }
+    .filter-row-main { flex-direction: column; align-items: stretch; gap: 8px; }
+    .filter-search-wrap { max-width: 100%; min-width: unset; }
+    .filter-actions { justify-content: flex-start; flex-wrap: wrap; }
+    .filter-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* 表格 - 横向滚动 */
+    .table-container { border-radius: 8px; }
+    table { font-size: 12px; }
+    thead th { padding: 9px 10px; font-size: 11px; }
+    tbody td { padding: 8px 10px; font-size: 12px; }
+    .btn-table { height: 24px; padding: 0 8px; font-size: 11px; }
+
+    /* 表单 */
+    .form-row  { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+    .form-group input, .form-group select, .form-group textarea { font-size: 14px; }
+    .form-section-title { font-size: 12px; }
+    .form-submit-row .btn { width: 100%; }
+
+    /* 统计卡片 */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card  { padding: 14px 12px; gap: 10px; }
+    .stat-card-icon { width: 40px; height: 40px; font-size: 18px; }
+    .stat-card-num  { font-size: 22px; }
+    .stat-card-label { font-size: 12px; }
+    .charts-row { grid-template-columns: 1fr; gap: 12px; }
+    .chart-card { padding: 14px 12px; }
+    .chart-card h3 { font-size: 13px; }
+
+    /* 试卷卡片 */
+    .paper-grid { grid-template-columns: 1fr; gap: 12px; }
+    .paper-card { padding: 14px; }
+
+    /* 弹窗 */
+    .modal-content { padding: 20px 16px; border-radius: 10px; }
+    .modal-box { border-radius: 10px; max-width: 96vw !important; }
+    .modal-body { padding: 14px !important; }
+    #pdfModal .modal-box { width: 100vw; max-width: 100vw !important; height: 100vh; border-radius: 0; }
+    #pdfModal .modal-box iframe { height: calc(100vh - 60px) !important; }
+
+    /* 签约步骤 */
+    .sign-steps { padding: 12px 0 0; }
+    .step-num   { width: 30px; height: 30px; font-size: 13px; }
+    .step-label { font-size: 11px; }
+    .step-line  { min-width: 30px; }
+
+    /* 上传区域 */
+    .upload-zone { padding: 30px 16px; }
+    .upload-icon { font-size: 36px; }
+
+    /* 分页 */
+    .pagination { justify-content: center; gap: 4px; }
+    .pagination button { min-width: 28px; height: 28px; font-size: 12px; }
+    .pagination-info { font-size: 12px; }
+
+    /* 日志表格 */
+    .log-table th, .log-table td { padding: 8px 8px; font-size: 12px; }
+
+    /* 用户表单 */
+    .form-actions { flex-direction: column; }
+    .form-actions .btn { width: 100%; }
+
+    /* 确认统计 */
+    .confirm-stat { gap: 10px; }
+    .stat-item { padding: 12px 16px; min-width: 80px; }
+    .stat-num  { font-size: 24px; }
+}
+
+/* ---- 超小屏（≤480px） ---- */
+@media (max-width: 480px) {
+    .login-title { font-size: 17px; letter-spacing: 1px; }
+    .login-box   { padding: 20px 14px; }
+    .stats-grid  { grid-template-columns: 1fr; }
+    .filter-grid { grid-template-columns: 1fr; }
+    .header h1   { font-size: 12px; }
+    .content     { padding: 10px; }
+    .card, .form-card, .table-card { padding: 12px 10px; }
+    #adminToolbar .btn { font-size: 11px; padding: 0 8px; height: 30px; }
+    .paper-grid  { grid-template-columns: 1fr; }
+    .step-line   { min-width: 20px; max-width: 40px; }
 }
 
 /* ===================================================
@@ -1284,26 +1459,7 @@ tbody td {
 #statUnsigned { color: #e67e22; }
 #statRate   { color: #6f42c1; }
 
-/* ===================================================
-   响应式补充
-   =================================================== */
-@media (max-width: 768px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .filter-bar { flex-direction: column; align-items: stretch; }
-    .filter-bar select, .filter-bar input[type="text"] { width: 100%; min-width: unset; }
-    .header-right { flex-wrap: wrap; gap: 6px; }
-    .header-right button { font-size: 12px; padding: 6px 10px; }
-    /* 筛选区域移动端适配 */
-    .filter-row-main { flex-direction: column; align-items: stretch; }
-    .filter-search-wrap { max-width: 100%; }
-    .filter-actions { justify-content: flex-start; }
-    .filter-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-}
-@media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr; }
-    .stat-card-num { font-size: 22px; }
-    .filter-grid { grid-template-columns: 1fr; }
-}
+/* 旧响应式补充已并入主响应式块 */
 
 /* ===================================================
    多列表单布局（新增/编辑学生页）
