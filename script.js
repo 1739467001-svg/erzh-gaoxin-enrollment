@@ -8,6 +8,90 @@ let signPreviewStudents = [];
 const API_BASE = '';
 
 // ============================================================
+// 学校数据（来源：杭州初中学校Excel）
+// ============================================================
+const SCHOOL_DATA = {
+  '上城区': ['建兰中学','采荷实验学校','杭州中学','钱学森学校','开元中学','惠兴中学','江城中学','勇进实验学校','杭州第十中学','清河实验学校','澎扬中学','澎诚中学','钱江外国语实验学校','采荷中学','钱江新城实验学校','笕桥实验中学','天杭实验学校','景荷中学','丁荷中学','四季青中学','丁兰实验中学','东城中学','东城实验学校','东城第二实验学校','夏衍初级中学','浙江省教育科学研究院附属实验学校','丁蕙实验中学','笕成中学','杭州天成教育集团','景芳中学','杭州第六中学'],
+  '拱墅区': ['文澜中学+文澜实验','星澜中学','育才中学','育才大城北学校','锦绣中学','启正中学','观成实验学校','观成武林中学','大成岳家湾实验学校','大成实验学校','风华中学','春蕾中学','青春中学','朝晖中学','胜蓝中学','景成实验学校','风帆中学','明珠实验学校','安吉路实验学校','安吉路教育集团新天地实验学校','行知中学','上海世外学校','华东师范大学附属杭州学校','杭州北苑实验中学','大关中学','大关实验中学','拱宸中学','文晖中学','杭师大文晖实验学校','启航中学','树兰中学','康桥中学','长阳中学','桃源中学'],
+  '西湖区': ['公益中学','之江实验中学','十三中教育集团(总校)','嘉绿苑中学','保俶塔实验学校','保俶塔申花实验学校','第十五中学教育集团(浙大附初)','第十五中学教育集团(崇德校区)','丰潭中学','景汇中学','周浦、袁浦中学(也称双浦)','西湖第一实验学校','西溪中学','三墩中学','弘益中学','西子实验学校','西溪实验学校','杭州云谷学校','上泗中学','紫金港中学','翠苑中学','文华中学','文理中学','杭州仁和实验学校','文溪中学','浙江工业大学附属实验学校'],
+  '滨江区': ['杭州二中白马湖学校','杭州湖畔学校','长河中学','江南实验学校','闻涛中学','高新实验学校','滨和中学','浦沿中学','滨兰实验学校','滨兴学校','西兴中学','滨文中学','杭州竺可桢学校','启成学校','养正学校','文海实验学校','文海实验中学','文海启源中学','观澜中学','学正中学','下沙中学','实验外国语学校','景苑中学','新湾中学','义蓬中学','金沙湖实验学校']
+};
+
+// 所有学校（含"其他"）
+const ALL_SCHOOLS = [...Object.values(SCHOOL_DATA).flat(), '其他'];
+
+// ============================================================
+// 学校 Autocomplete
+// ============================================================
+// prefix: 'reg' | 'add' | 'edit'
+function onSchoolInput(prefix) {
+    const inputId = prefix === 'reg' ? 'school' : (prefix + 'School');
+    const dropdownId = prefix + 'SchoolDropdown';
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+
+    const keyword = input.value.trim();
+    // 根据当前行政区过滤
+    const districtId = prefix === 'reg' ? 'regDistrict' : (prefix + 'District');
+    const districtEl = document.getElementById(districtId);
+    const district = districtEl ? districtEl.value : '';
+
+    let pool;
+    if (district && district !== '其他' && SCHOOL_DATA[district]) {
+        pool = [...SCHOOL_DATA[district], '其他'];
+    } else {
+        pool = ALL_SCHOOLS;
+    }
+
+    let matches;
+    if (!keyword) {
+        matches = pool.slice(0, 30);
+    } else {
+        matches = pool.filter(s => s.includes(keyword));
+    }
+
+    if (matches.length === 0) {
+        dropdown.innerHTML = '<div class="school-dropdown-empty">无匹配学校，可直接输入</div>';
+        dropdown.classList.add('show');
+        return;
+    }
+
+    dropdown.innerHTML = matches.map(s => {
+        const hl = keyword ? s.replace(new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g'), `<span class="match-highlight">${keyword}</span>`) : s;
+        const safeName = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<div class="school-dropdown-item" onmousedown="selectSchool('${prefix}','${safeName}')">${hl}</div>`;
+    }).join('');
+    dropdown.classList.add('show');
+}
+
+function selectSchool(prefix, name) {
+    const inputId = prefix === 'reg' ? 'school' : (prefix + 'School');
+    const dropdownId = prefix + 'SchoolDropdown';
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    if (input) input.value = name;
+    if (dropdown) dropdown.classList.remove('show');
+}
+
+function onDistrictChange(prefix) {
+    // 行政区变化时清空学校输入并重新过滤
+    const inputId = prefix === 'reg' ? 'school' : (prefix + 'School');
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+    onSchoolInput(prefix);
+}
+
+// 点击其他地方关闭下拉
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.school-dropdown.show').forEach(dd => {
+        if (!dd.closest('.school-autocomplete-wrap').contains(e.target)) {
+            dd.classList.remove('show');
+        }
+    });
+});
+
+// ============================================================
 // Toast 提示
 // ============================================================
 function showToast(msg, type = '') {
@@ -533,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gender: document.getElementById('addGender').value,
                 phone1: document.getElementById('addPhone1').value,
                 phone2: document.getElementById('addPhone2').value,
-                district: document.getElementById('addDistrict').value,
+                district: document.getElementById('addDistrict') ? document.getElementById('addDistrict').value : '',
                 school: document.getElementById('addSchool').value,
                 graduation_year: document.getElementById('addGraduation_year').value || null,
                 class_name: document.getElementById('addClass_name').value,
@@ -593,6 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = {
                 name: document.getElementById('studentName').value,
                 school: document.getElementById('school').value,
+                district: document.getElementById('regDistrict') ? document.getElementById('regDistrict').value : '',
                 phone1: document.getElementById('phone1').value,
                 reason: document.getElementById('reason').value,
                 score: document.getElementById('score').value,

@@ -47,27 +47,38 @@
             <div class="form-card">
                 <h2>学生签约登记</h2>
                 <form id="studentForm">
-                    <div class="form-group"><label>学生姓名</label><input type="text" id="studentName" placeholder="请输入学生姓名" required></div>
-                    <div class="form-group"><label>学校</label><input type="text" id="school" placeholder="请输入毕业学校" required></div>
-                    <div class="form-group"><label>联系电话</label><input type="tel" id="phone1" placeholder="请输入联系电话" required></div>
-                    <div class="form-group">
-                        <label>签约理由</label>
-                        <select id="reason" required>
-                            <option value="">请选择签约理由</option>
-                            <option value="测评成绩">测评成绩</option>
-                            <option value="一模成绩">一模成绩</option>
-                            <option value="二模成绩">二模成绩</option>
-                            <option value="其他">其他</option>
-                        </select>
+                    <div class="form-grid">
+                        <div class="form-group"><label>学生姓名 <span class="required">*</span></label><input type="text" id="studentName" placeholder="请输入学生姓名" required></div>
+                        <div class="form-group"><label>联系电话 <span class="required">*</span></label><input type="tel" id="phone1" placeholder="请输入联系电话" required></div>
+                        <div class="form-group">
+                            <label>行政区</label>
+                            <select id="regDistrict" onchange="onDistrictChange('reg')">
+                                <option value="">请选择行政区</option>
+                                <option value="上城区">上城区</option>
+                                <option value="拱墅区">拱墅区</option>
+                                <option value="西湖区">西湖区</option>
+                                <option value="滨江区">滨江区</option>
+                                <option value="錢塘区">錢塘区</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group school-autocomplete-wrap">
+                            <label>学校 <span class="required">*</span></label>
+                            <input type="text" id="school" placeholder="输入学校名称搜索..." autocomplete="off" oninput="onSchoolInput('reg')" onfocus="onSchoolInput('reg')" required>
+                            <div class="school-dropdown" id="regSchoolDropdown"></div>
+                        </div>
+                        <div class="form-group"><label>签约理由 <span class="required">*</span></label><select id="reason" required><option value="">请选择签约理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                        <div class="form-group"><label>成绩 <span class="required">*</span></label><input type="text" id="score" placeholder="如：580、A、B+等" required></div>
+                        <div class="form-group form-group-full">
+                            <label>成绩图片或PDF文件</label>
+                            <input type="file" id="file" accept=".jpg,.jpeg,.png,.pdf">
+                            <p id="fileError" class="error-message" style="display: none;">请上传文件</p>
+                        </div>
+                        <div class="form-group form-group-full"><label>备注</label><textarea id="remark" placeholder="请输入备注信息"></textarea></div>
                     </div>
-                    <div class="form-group"><label>成绩</label><input type="text" id="score" placeholder="请输入成绩（如：580、A、B+等）" required></div>
-                    <div class="form-group">
-                        <label>成绩图片或PDF文件</label>
-                        <input type="file" id="file" accept=".jpg,.jpeg,.png,.pdf">
-                        <p id="fileError" class="error-message" style="display: none;">请上传文件</p>
+                    <div class="form-submit-row">
+                        <button type="submit" class="btn btn-primary">提交登记</button>
                     </div>
-                    <div class="form-group"><label>备注</label><textarea id="remark" placeholder="请输入备注信息"></textarea></div>
-                    <button type="submit" class="btn btn-primary">提交登记</button>
                 </form>
             </div>
         </div>
@@ -181,37 +192,70 @@
             <div class="form-card">
                 <h2>新增学生信息</h2>
                 <form id="addStudentForm">
-                    <div class="form-group"><label>学生姓名</label><input type="text" id="addStudentName" placeholder="请输入学生姓名" required></div>
-                    <div class="form-group"><label>性别</label><select id="addGender"><option value="">请选择性别</option><option value="男">男</option><option value="女">女</option></select></div>
-                    <div class="form-group"><label>联系电话1</label><input type="tel" id="addPhone1" placeholder="请输入联系电话" required></div>
-                    <div class="form-group"><label>联系电话2</label><input type="tel" id="addPhone2" placeholder="请输入备用联系电话"></div>
-                    <div class="form-group"><label>行政区</label><input type="text" id="addDistrict" placeholder="请输入行政区"></div>
-                    <div class="form-group"><label>学校</label><input type="text" id="addSchool" placeholder="请输入毕业学校" required></div>
-                    <div class="form-group"><label>毕业年份</label><input type="number" id="addGraduation_year" placeholder="请输入毕业年份"></div>
-                    <div class="form-group"><label>班级</label><input type="text" id="addClass_name" placeholder="请输入班级"></div>
-                    <div class="form-group"><label>年级总人数</label><input type="number" id="addGrade_total" placeholder="请输入年级总人数"></div>
-                    <div class="form-group"><label>初一上期末年级排名</label><input type="number" id="addRank_初一上" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初一下期末年级排名</label><input type="number" id="addRank_初一下" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初二上期末年级排名</label><input type="number" id="addRank_初二上" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初二下期末年级排名</label><input type="number" id="addRank_初二下" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初三上期中年级排名</label><input type="number" id="addRank_初三上期中" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初三上期末排名</label><input type="number" id="addRank_初三上期末" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初三上期末分数</label><input type="text" id="addScore_初三上期末" placeholder="请输入分数"></div>
-                    <div class="form-group"><label>初三一模分数</label><input type="text" id="addScore_一模" placeholder="请输入分数"></div>
-                    <div class="form-group"><label>初三二模分数</label><input type="text" id="addScore_二模" placeholder="请输入分数"></div>
-                    <div class="form-group"><label>测试试卷</label><input type="text" id="addTest_paper" placeholder="请输入测试试卷"></div>
-                    <div class="form-group"><label>测试地点</label><input type="text" id="addTest_location" placeholder="请输入测试地点"></div>
-                    <div class="form-group"><label>数学</label><input type="text" id="addMath_score" placeholder="请输入数学成绩"></div>
-                    <div class="form-group"><label>英语</label><input type="text" id="addEnglish_score" placeholder="请输入英语成绩"></div>
-                    <div class="form-group"><label>总分</label><input type="text" id="addTotal_score" placeholder="请输入总分"></div>
-                    <div class="form-group"><label>评价等级</label><input type="text" id="addEvaluation" placeholder="请输入评价等级"></div>
-                    <div class="form-group"><label>承诺班型</label><input type="text" id="addPromised_class" placeholder="请输入承诺班型"></div>
-                    <div class="form-group"><label>是否已签约</label><select id="addIs_signed"><option value="0">否</option><option value="1">是</option></select></div>
-                    <div class="form-group"><label>签约理由</label><select id="addReason" required><option value="">请选择签约理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
-                    <div class="form-group"><label>成绩</label><input type="text" id="addScore" placeholder="请输入成绩（如：580、A、B+等）" required></div>
-                    <div class="form-group"><label>成绩图片或PDF文件</label><input type="file" id="addFile" accept=".jpg,.jpeg,.png,.pdf"><p id="addFileError" class="error-message" style="display: none;">请上传文件</p></div>
-                    <div class="form-group"><label>备注</label><textarea id="addRemark" placeholder="请输入备注信息"></textarea></div>
-                    <button type="submit" class="btn btn-primary">提交登记</button>
+                    <!-- 第一组：基本信息 -->
+                    <div class="form-section-title">基本信息</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>学生姓名 <span class="required">*</span></label><input type="text" id="addStudentName" placeholder="请输入学生姓名" required></div>
+                        <div class="form-group"><label>性别</label><select id="addGender"><option value="">请选择性别</option><option value="男">男</option><option value="女">女</option></select></div>
+                        <div class="form-group"><label>联系电话1 <span class="required">*</span></label><input type="tel" id="addPhone1" placeholder="请输入联系电话" required></div>
+                        <div class="form-group"><label>联系电话2</label><input type="tel" id="addPhone2" placeholder="请输入备用电话"></div>
+                        <div class="form-group">
+                            <label>行政区</label>
+                            <select id="addDistrict" onchange="onDistrictChange('add')">
+                                <option value="">请选择行政区</option>
+                                <option value="上城区">上城区</option>
+                                <option value="拱墅区">拱墅区</option>
+                                <option value="西湖区">西湖区</option>
+                                <option value="滨江区">滨江区</option>
+                                <option value="錢塘区">錢塘区</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group school-autocomplete-wrap">
+                            <label>学校 <span class="required">*</span></label>
+                            <input type="text" id="addSchool" placeholder="输入学校名称搜索..." autocomplete="off" oninput="onSchoolInput('add')" onfocus="onSchoolInput('add')" required>
+                            <div class="school-dropdown" id="addSchoolDropdown"></div>
+                        </div>
+                        <div class="form-group"><label>毕业年份</label><input type="number" id="addGraduation_year" placeholder="如 2025"></div>
+                        <div class="form-group"><label>班级</label><input type="text" id="addClass_name" placeholder="如 9年级1班"></div>
+                        <div class="form-group"><label>年级总人数</label><input type="number" id="addGrade_total" placeholder="请输入年级总人数"></div>
+                    </div>
+                    <!-- 第二组：年级排名 -->
+                    <div class="form-section-title">年级排名</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>初一上期末</label><input type="number" id="addRank_初一上" placeholder="排名"></div>
+                        <div class="form-group"><label>初一下期末</label><input type="number" id="addRank_初一下" placeholder="排名"></div>
+                        <div class="form-group"><label>初二上期末</label><input type="number" id="addRank_初二上" placeholder="排名"></div>
+                        <div class="form-group"><label>初二下期末</label><input type="number" id="addRank_初二下" placeholder="排名"></div>
+                        <div class="form-group"><label>初三上期中</label><input type="number" id="addRank_初三上期中" placeholder="排名"></div>
+                        <div class="form-group"><label>初三上期末排名</label><input type="number" id="addRank_初三上期末" placeholder="排名"></div>
+                    </div>
+                    <!-- 第三组：成绩信息 -->
+                    <div class="form-section-title">成绩信息</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>初三上期末分数</label><input type="text" id="addScore_初三上期末" placeholder="分数"></div>
+                        <div class="form-group"><label>初三一模分数</label><input type="text" id="addScore_一模" placeholder="分数"></div>
+                        <div class="form-group"><label>初三二模分数</label><input type="text" id="addScore_二模" placeholder="分数"></div>
+                        <div class="form-group"><label>测试试卷</label><input type="text" id="addTest_paper" placeholder="请输入测试试卷"></div>
+                        <div class="form-group"><label>测试地点</label><input type="text" id="addTest_location" placeholder="请输入测试地点"></div>
+                        <div class="form-group"><label>数学</label><input type="text" id="addMath_score" placeholder="数学成绩"></div>
+                        <div class="form-group"><label>英语</label><input type="text" id="addEnglish_score" placeholder="英语成绩"></div>
+                        <div class="form-group"><label>总分</label><input type="text" id="addTotal_score" placeholder="总分"></div>
+                        <div class="form-group"><label>评价等级</label><input type="text" id="addEvaluation" placeholder="如 A、B+"></div>
+                    </div>
+                    <!-- 第四组：签约信息 -->
+                    <div class="form-section-title">签约信息</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>承诺班型</label><input type="text" id="addPromised_class" placeholder="请输入承诺班型"></div>
+                        <div class="form-group"><label>是否已签约</label><select id="addIs_signed"><option value="0">否</option><option value="1">是</option></select></div>
+                        <div class="form-group"><label>签约理由 <span class="required">*</span></label><select id="addReason" required><option value="">请选择签约理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                        <div class="form-group"><label>成绩 <span class="required">*</span></label><input type="text" id="addScore" placeholder="如：580、A、B+等" required></div>
+                        <div class="form-group form-group-full"><label>成绩图片或PDF文件</label><input type="file" id="addFile" accept=".jpg,.jpeg,.png,.pdf"><p id="addFileError" class="error-message" style="display: none;">请上传文件</p></div>
+                        <div class="form-group form-group-full"><label>备注</label><textarea id="addRemark" placeholder="请输入备注信息"></textarea></div>
+                    </div>
+                    <div class="form-submit-row">
+                        <button type="submit" class="btn btn-primary">提交登记</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -232,37 +276,70 @@
                 <h2>编辑学生信息</h2>
                 <form id="editForm">
                     <input type="hidden" id="editId">
-                    <div class="form-group"><label>学生姓名</label><input type="text" id="editStudentName" placeholder="请输入学生姓名" required></div>
-                    <div class="form-group"><label>性别</label><select id="editGender"><option value="">请选择性别</option><option value="男">男</option><option value="女">女</option></select></div>
-                    <div class="form-group"><label>联系电话1</label><input type="tel" id="editPhone1" placeholder="请输入联系电话" required></div>
-                    <div class="form-group"><label>联系电话2</label><input type="tel" id="editPhone2" placeholder="请输入备用联系电话"></div>
-                    <div class="form-group"><label>行政区</label><input type="text" id="editDistrict" placeholder="请输入行政区"></div>
-                    <div class="form-group"><label>毕业学校</label><input type="text" id="editSchool" placeholder="请输入毕业学校" required></div>
-                    <div class="form-group"><label>毕业年份</label><input type="number" id="editGraduation_year" placeholder="请输入毕业年份"></div>
-                    <div class="form-group"><label>班级</label><input type="text" id="editClass_name" placeholder="请输入班级"></div>
-                    <div class="form-group"><label>年级总人数</label><input type="number" id="editGrade_total" placeholder="请输入年级总人数"></div>
-                    <div class="form-group"><label>初一上期末年级排名</label><input type="number" id="editRank_初一上" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初一下期末年级排名</label><input type="number" id="editRank_初一下" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初二上期末年级排名</label><input type="number" id="editRank_初二上" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初二下期末年级排名</label><input type="number" id="editRank_初二下" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初三上期中年级排名</label><input type="number" id="editRank_初三上期中" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初三上期末排名</label><input type="number" id="editRank_初三上期末" placeholder="请输入排名"></div>
-                    <div class="form-group"><label>初三上期末分数</label><input type="text" id="editScore_初三上期末" placeholder="请输入分数"></div>
-                    <div class="form-group"><label>初三一模分数</label><input type="text" id="editScore_一模" placeholder="请输入分数"></div>
-                    <div class="form-group"><label>初三二模分数</label><input type="text" id="editScore_二模" placeholder="请输入分数"></div>
-                    <div class="form-group"><label>测试试卷</label><input type="text" id="editTest_paper" placeholder="请输入测试试卷"></div>
-                    <div class="form-group"><label>测试地点</label><input type="text" id="editTest_location" placeholder="请输入测试地点"></div>
-                    <div class="form-group"><label>数学</label><input type="text" id="editMath_score" placeholder="请输入数学成绩"></div>
-                    <div class="form-group"><label>英语</label><input type="text" id="editEnglish_score" placeholder="请输入英语成绩"></div>
-                    <div class="form-group"><label>总分</label><input type="text" id="editTotal_score" placeholder="请输入总分"></div>
-                    <div class="form-group"><label>评价等级</label><input type="text" id="editEvaluation" placeholder="请输入评价等级"></div>
-                    <div class="form-group"><label>承诺班型</label><input type="text" id="editPromised_class" placeholder="请输入承诺班型"></div>
-                    <div class="form-group"><label>是否已签约</label><select id="editIs_signed"><option value="0">否</option><option value="1">是</option></select></div>
-                    <div class="form-group"><label>签约理由</label><select id="editReason" required><option value="">请选择签约理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
-                    <div class="form-group"><label>成绩</label><input type="text" id="editScore" placeholder="请输入成绩（如：580、A、B+等）" required></div>
-                    <div class="form-group"><label>成绩图片或PDF文件（不修改请留空）</label><input type="file" id="editFile" accept=".jpg,.jpeg,.png,.pdf"><p id="currentFile" data-path="" style="font-size:12px;color:#888;margin-top:4px;"></p></div>
-                    <div class="form-group"><label>备注</label><textarea id="editRemark" placeholder="请输入备注信息"></textarea></div>
-                    <button type="submit" class="btn btn-primary">保存修改</button>
+                    <!-- 第一组：基本信息 -->
+                    <div class="form-section-title">基本信息</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>学生姓名 <span class="required">*</span></label><input type="text" id="editStudentName" placeholder="请输入学生姓名" required></div>
+                        <div class="form-group"><label>性别</label><select id="editGender"><option value="">请选择性别</option><option value="男">男</option><option value="女">女</option></select></div>
+                        <div class="form-group"><label>联系电话1 <span class="required">*</span></label><input type="tel" id="editPhone1" placeholder="请输入联系电话" required></div>
+                        <div class="form-group"><label>联系电话2</label><input type="tel" id="editPhone2" placeholder="请输入备用电话"></div>
+                        <div class="form-group">
+                            <label>行政区</label>
+                            <select id="editDistrict" onchange="onDistrictChange('edit')">
+                                <option value="">请选择行政区</option>
+                                <option value="上城区">上城区</option>
+                                <option value="拱墅区">拱墅区</option>
+                                <option value="西湖区">西湖区</option>
+                                <option value="滨江区">滨江区</option>
+                                <option value="錢塘区">錢塘区</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group school-autocomplete-wrap">
+                            <label>毕业学校 <span class="required">*</span></label>
+                            <input type="text" id="editSchool" placeholder="输入学校名称搜索..." autocomplete="off" oninput="onSchoolInput('edit')" onfocus="onSchoolInput('edit')" required>
+                            <div class="school-dropdown" id="editSchoolDropdown"></div>
+                        </div>
+                        <div class="form-group"><label>毕业年份</label><input type="number" id="editGraduation_year" placeholder="如 2025"></div>
+                        <div class="form-group"><label>班级</label><input type="text" id="editClass_name" placeholder="如 9年级1班"></div>
+                        <div class="form-group"><label>年级总人数</label><input type="number" id="editGrade_total" placeholder="请输入年级总人数"></div>
+                    </div>
+                    <!-- 第二组：年级排名 -->
+                    <div class="form-section-title">年级排名</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>初一上期末</label><input type="number" id="editRank_初一上" placeholder="排名"></div>
+                        <div class="form-group"><label>初一下期末</label><input type="number" id="editRank_初一下" placeholder="排名"></div>
+                        <div class="form-group"><label>初二上期末</label><input type="number" id="editRank_初二上" placeholder="排名"></div>
+                        <div class="form-group"><label>初二下期末</label><input type="number" id="editRank_初二下" placeholder="排名"></div>
+                        <div class="form-group"><label>初三上期中</label><input type="number" id="editRank_初三上期中" placeholder="排名"></div>
+                        <div class="form-group"><label>初三上期末排名</label><input type="number" id="editRank_初三上期末" placeholder="排名"></div>
+                    </div>
+                    <!-- 第三组：成绩信息 -->
+                    <div class="form-section-title">成绩信息</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>初三上期末分数</label><input type="text" id="editScore_初三上期末" placeholder="分数"></div>
+                        <div class="form-group"><label>初三一模分数</label><input type="text" id="editScore_一模" placeholder="分数"></div>
+                        <div class="form-group"><label>初三二模分数</label><input type="text" id="editScore_二模" placeholder="分数"></div>
+                        <div class="form-group"><label>测试试卷</label><input type="text" id="editTest_paper" placeholder="请输入测试试卷"></div>
+                        <div class="form-group"><label>测试地点</label><input type="text" id="editTest_location" placeholder="请输入测试地点"></div>
+                        <div class="form-group"><label>数学</label><input type="text" id="editMath_score" placeholder="数学成绩"></div>
+                        <div class="form-group"><label>英语</label><input type="text" id="editEnglish_score" placeholder="英语成绩"></div>
+                        <div class="form-group"><label>总分</label><input type="text" id="editTotal_score" placeholder="总分"></div>
+                        <div class="form-group"><label>评价等级</label><input type="text" id="editEvaluation" placeholder="如 A、B+"></div>
+                    </div>
+                    <!-- 第四组：签约信息 -->
+                    <div class="form-section-title">签约信息</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>承诺班型</label><input type="text" id="editPromised_class" placeholder="请输入承诺班型"></div>
+                        <div class="form-group"><label>是否已签约</label><select id="editIs_signed"><option value="0">否</option><option value="1">是</option></select></div>
+                        <div class="form-group"><label>签约理由 <span class="required">*</span></label><select id="editReason" required><option value="">请选择签约理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                        <div class="form-group"><label>成绩 <span class="required">*</span></label><input type="text" id="editScore" placeholder="如：580、A、B+等" required></div>
+                        <div class="form-group form-group-full"><label>成绩图片或PDF文件（不修改请留空）</label><input type="file" id="editFile" accept=".jpg,.jpeg,.png,.pdf"><p id="currentFile" data-path="" style="font-size:12px;color:#888;margin-top:4px;"></p></div>
+                        <div class="form-group form-group-full"><label>备注</label><textarea id="editRemark" placeholder="请输入备注信息"></textarea></div>
+                    </div>
+                    <div class="form-submit-row">
+                        <button type="submit" class="btn btn-primary">保存修改</button>
+                    </div>
                 </form>
             </div>
         </div>
