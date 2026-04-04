@@ -833,24 +833,36 @@ tbody td {
     position: fixed;
     top: 24px;
     left: 50%;
-    transform: translateX(-50%) translateY(-80px);
+    transform: translateX(-50%) translateY(-12px);
     background: #1a3a6b;
     color: #fff;
-    padding: 12px 28px;
-    border-radius: 8px;
+    padding: 10px 24px;
+    border-radius: 24px;
     font-size: 14px;
     font-weight: 500;
+    line-height: 1.4;
+    max-width: 360px;
+    width: auto;
+    height: auto;
+    min-height: unset;
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
     z-index: 9999;
-    transition: transform 0.3s ease;
-    box-shadow: 0 4px 20px rgba(26,58,107,0.3);
-    white-space: nowrap;
+    opacity: 0;
     pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 4px 20px rgba(26,58,107,0.25);
 }
 
-#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
 #toast.success { background: #28a745; }
 #toast.error   { background: #dc3545; }
 #toast.warning { background: #e67e22; }
+#toast.info    { background: #1a3a6b; }
 
 /* ===================================================
    文件链接
@@ -1078,6 +1090,13 @@ tbody td {
     .confirm-stat { gap: 10px; }
     .stat-item { padding: 12px 16px; min-width: 80px; }
     .stat-num  { font-size: 24px; }
+
+    /* Toast 提示 - 手机适配 */
+    #toast {
+        max-width: calc(100vw - 40px);
+        font-size: 13px;
+        padding: 9px 18px;
+    }
 }
 
 /* ---- 超小屏（≤480px） ---- */
@@ -1392,32 +1411,7 @@ tbody td {
 .log-table td { font-size: 13px; }
 
 
-/* ===================================================
-   Toast 提示
-   =================================================== */
-#toast {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: rgba(26, 58, 107, 0.92);
-    color: #fff;
-    padding: 12px 28px;
-    border-radius: 24px;
-    font-size: 14px;
-    z-index: 9999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s, transform 0.3s;
-    white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-}
-#toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-#toast.success { background: rgba(40, 167, 69, 0.92); }
-#toast.error   { background: rgba(220, 53, 69, 0.92); }
+/* Toast 提示样式已在上方统一定义 */
 
 /* ===================================================
    修改密码模态框
