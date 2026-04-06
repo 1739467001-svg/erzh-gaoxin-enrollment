@@ -8,6 +8,51 @@ let signPreviewStudents = [];
 const API_BASE = '';
 
 // ============================================================
+// 数据一致性：自动轮询刷新机制
+// 每 15 秒自动刷新当前活跃页面的数据，确保多用户操作实时同步
+// ============================================================
+let _refreshTimer = null;
+let _currentActivePage = null;
+
+function startAutoRefresh() {
+    stopAutoRefresh();
+    _refreshTimer = setInterval(() => {
+        if (!currentUser) return;
+        refreshActivePage();
+    }, 15000);
+}
+
+function stopAutoRefresh() {
+    if (_refreshTimer) {
+        clearInterval(_refreshTimer);
+        _refreshTimer = null;
+    }
+}
+
+function refreshActivePage() {
+    const page = _currentActivePage;
+    if (!page) return;
+    switch (page) {
+        case 'adminPage':
+            loadStudents();
+            break;
+        case 'statsPage':
+            loadStatistics();
+            break;
+        case 'logsPage':
+            loadLogs();
+            break;
+        case 'userManagementPage':
+            loadUsers();
+            break;
+        case 'examPapersPage':
+            loadExamPapers();
+            break;
+    }
+}
+
+
+// ============================================================
 // 手机端汉堡菜单
 // ============================================================
 function toggleMobileMenu(menuId) {
@@ -156,6 +201,7 @@ async function login() {
 
 function logout() {
     currentUser = null;
+    stopAutoRefresh();
     showPage('loginPage');
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
@@ -181,6 +227,13 @@ function showPage(pageId) {
     const el = document.getElementById(pageId);
     el.style.visibility = 'visible';
     el.style.display = (pageId === 'loginPage') ? 'flex' : 'block';
+    // 数据一致性：跟踪当前活跃页面并启动自动刷新
+    _currentActivePage = pageId;
+    if (pageId === 'loginPage') {
+        stopAutoRefresh();
+    } else {
+        startAutoRefresh();
+    }
 }
 
 function switchToRegister() {
@@ -554,15 +607,18 @@ function renderStudentTable(students) {
             <td>${s.graduation_year || ''}</td>
             <td>${s.class_name || ''}</td>
             <td>${s.grade_total || ''}</td>
-            <td>${s['rank_初一上'] || ''}</td>
-            <td>${s['rank_初一下'] || ''}</td>
+            <td>${s['score_初二上'] || ''}</td>
             <td>${s['rank_初二上'] || ''}</td>
+            <td>${s['score_初二下'] || ''}</td>
             <td>${s['rank_初二下'] || ''}</td>
+            <td>${s['score_初三上期中'] || ''}</td>
             <td>${s['rank_初三上期中'] || ''}</td>
-            <td>${s['rank_初三上期末'] || ''}</td>
             <td>${s['score_初三上期末'] || ''}</td>
+            <td>${s['rank_初三上期末'] || ''}</td>
             <td>${s['score_一模'] || ''}</td>
+            <td>${s['rank_初三一模'] || ''}</td>
             <td>${s['score_二模'] || ''}</td>
+            <td>${s['rank_初三二模'] || ''}</td>
             <td>${s.test_paper || ''}</td>
             <td>${s.test_location || ''}</td>
             <td>${s.math_score || ''}</td>
@@ -756,15 +812,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 graduation_year: document.getElementById('editGraduation_year').value || null,
                 class_name: document.getElementById('editClass_name').value,
                 grade_total: document.getElementById('editGrade_total').value || null,
-                'rank_初一上': document.getElementById('editRank_初一上').value || null,
-                'rank_初一下': document.getElementById('editRank_初一下').value || null,
                 'rank_初二上': document.getElementById('editRank_初二上').value || null,
                 'rank_初二下': document.getElementById('editRank_初二下').value || null,
                 'rank_初三上期中': document.getElementById('editRank_初三上期中').value || null,
                 'rank_初三上期末': document.getElementById('editRank_初三上期末').value || null,
+                'score_初二上': document.getElementById('editScore_初二上').value,
+                'score_初二下': document.getElementById('editScore_初二下').value,
+                'score_初三上期中': document.getElementById('editScore_初三上期中').value,
                 'score_初三上期末': document.getElementById('editScore_初三上期末').value,
                 'score_一模': document.getElementById('editScore_一模').value,
                 'score_二模': document.getElementById('editScore_二模').value,
+                'rank_初三一模': document.getElementById('editRank_初三一模').value || null,
+                'rank_初三二模': document.getElementById('editRank_初三二模').value || null,
                 test_paper: document.getElementById('editTest_paper').value,
                 test_location: document.getElementById('editTest_location').value,
                 math_score: document.getElementById('editMath_score').value,
@@ -887,15 +946,18 @@ async function editStudent(id) {
         document.getElementById('editGraduation_year').value = s.graduation_year || '';
         document.getElementById('editClass_name').value = s.class_name || '';
         document.getElementById('editGrade_total').value = s.grade_total || '';
-        document.getElementById('editRank_初一上').value = s['rank_初一上'] || '';
-        document.getElementById('editRank_初一下').value = s['rank_初一下'] || '';
+        document.getElementById('editScore_初二上').value = s['score_初二上'] || '';
         document.getElementById('editRank_初二上').value = s['rank_初二上'] || '';
+        document.getElementById('editScore_初二下').value = s['score_初二下'] || '';
         document.getElementById('editRank_初二下').value = s['rank_初二下'] || '';
+        document.getElementById('editScore_初三上期中').value = s['score_初三上期中'] || '';
         document.getElementById('editRank_初三上期中').value = s['rank_初三上期中'] || '';
-        document.getElementById('editRank_初三上期末').value = s['rank_初三上期末'] || '';
         document.getElementById('editScore_初三上期末').value = s['score_初三上期末'] || '';
+        document.getElementById('editRank_初三上期末').value = s['rank_初三上期末'] || '';
         document.getElementById('editScore_一模').value = s['score_一模'] || '';
+        document.getElementById('editRank_初三一模').value = s['rank_初三一模'] || '';
         document.getElementById('editScore_二模').value = s['score_二模'] || '';
+        document.getElementById('editRank_初三二模').value = s['rank_初三二模'] || '';
         document.getElementById('editTest_paper').value = s.test_paper || '';
         document.getElementById('editTest_location').value = s.test_location || '';
         document.getElementById('editMath_score').value = s.math_score || '';

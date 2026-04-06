@@ -166,9 +166,9 @@
                             <tr>
                                 <th>序号</th><th>学生姓名</th><th>性别</th><th>联系电话1</th><th>联系电话2</th>
                                 <th>行政区</th><th>初中学校名称</th><th>毕业年份</th><th>班级</th><th>年级总人数</th>
-                                <th>初一上期末年级排名</th><th>初一下期末年级排名</th><th>初二上期末年级排名</th><th>初二下期末年级排名</th>
-                                <th>初三上期中年级排名</th><th>初三上期末排名</th><th>初三上期末分数</th>
-                                <th>初三一模分数</th><th>初三二模分数</th><th>测试试卷</th><th>测试地点</th>
+                                <th>初二上分数</th><th>初二上排名</th><th>初二下分数</th><th>初二下排名</th>
+                                <th>初三上期中分数</th><th>初三上期中排名</th><th>初三上期末分数</th><th>初三上期末排名</th>
+                                <th>初三一模分数</th><th>初三一模排名</th><th>初三二模分数</th><th>初三二模排名</th><th>测试试卷</th><th>测试地点</th>
                                 <th>数学</th><th>英语</th><th>总分</th><th>评价等级</th><th>承诺班型</th>
                                 <th>是否已签约</th><th>文件</th><th>备注</th><th>负责老师</th><th>登记时间</th><th>操作</th>
                             </tr>
@@ -341,22 +341,55 @@
                         <div class="form-group"><label>班级</label><input type="text" id="editClass_name" placeholder="如 9年级1班"></div>
                         <div class="form-group"><label>年级总人数</label><input type="number" id="editGrade_total" placeholder="请输入年级总人数"></div>
                     </div>
-                    <!-- 第二组：年级排名 -->
-                    <div class="form-section-title">年级排名</div>
+                    <!-- 第二组：学校成绩 -->
+                    <div class="form-section-title">学校成绩</div>
                     <div class="form-grid">
-                        <div class="form-group"><label>初一上期末</label><input type="number" id="editRank_初一上" placeholder="排名"></div>
-                        <div class="form-group"><label>初一下期末</label><input type="number" id="editRank_初一下" placeholder="排名"></div>
-                        <div class="form-group"><label>初二上期末</label><input type="number" id="editRank_初二上" placeholder="排名"></div>
-                        <div class="form-group"><label>初二下期末</label><input type="number" id="editRank_初二下" placeholder="排名"></div>
-                        <div class="form-group"><label>初三上期中</label><input type="number" id="editRank_初三上期中" placeholder="排名"></div>
-                        <div class="form-group"><label>初三上期末排名</label><input type="number" id="editRank_初三上期末" placeholder="排名"></div>
+                        <div class="form-group">
+                            <label>初二上期末</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="editScore_初二上" placeholder="分数">
+                                <input type="number" id="editRank_初二上" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初二下期末</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="editScore_初二下" placeholder="分数">
+                                <input type="number" id="editRank_初二下" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三上期中</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="editScore_初三上期中" placeholder="分数">
+                                <input type="number" id="editRank_初三上期中" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三上期末</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="editScore_初三上期末" placeholder="分数">
+                                <input type="number" id="editRank_初三上期末" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三一模</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="editScore_一模" placeholder="分数">
+                                <input type="number" id="editRank_初三一模" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三二模</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="editScore_二模" placeholder="分数">
+                                <input type="number" id="editRank_初三二模" placeholder="排名">
+                            </div>
+                        </div>
                     </div>
-                    <!-- 第三组：成绩信息 -->
-                    <div class="form-section-title">成绩信息</div>
+                    <!-- 第三组：测试评估 -->
+                    <div class="form-section-title">测试评估</div>
                     <div class="form-grid">
-                        <div class="form-group"><label>初三上期末分数</label><input type="text" id="editScore_初三上期末" placeholder="分数"></div>
-                        <div class="form-group"><label>初三一模分数</label><input type="text" id="editScore_一模" placeholder="分数"></div>
-                        <div class="form-group"><label>初三二模分数</label><input type="text" id="editScore_二模" placeholder="分数"></div>
                         <div class="form-group"><label>测试试卷</label><input type="text" id="editTest_paper" placeholder="请输入测试试卷"></div>
                         <div class="form-group"><label>测试地点</label><input type="text" id="editTest_location" placeholder="请输入测试地点"></div>
                         <div class="form-group"><label>数学</label><input type="text" id="editMath_score" placeholder="数学成绩"></div>
