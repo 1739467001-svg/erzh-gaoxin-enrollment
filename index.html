@@ -223,22 +223,55 @@
                         <div class="form-group"><label>班级</label><input type="text" id="addClass_name" placeholder="如 9年级1班"></div>
                         <div class="form-group"><label>年级总人数</label><input type="number" id="addGrade_total" placeholder="请输入年级总人数"></div>
                     </div>
-                    <!-- 第二组：年级排名 -->
-                    <div class="form-section-title">年级排名</div>
+                    <!-- 第二组：学校成绩 -->
+                    <div class="form-section-title">学校成绩</div>
                     <div class="form-grid">
-                        <div class="form-group"><label>初一上期末</label><input type="number" id="addRank_初一上" placeholder="排名"></div>
-                        <div class="form-group"><label>初一下期末</label><input type="number" id="addRank_初一下" placeholder="排名"></div>
-                        <div class="form-group"><label>初二上期末</label><input type="number" id="addRank_初二上" placeholder="排名"></div>
-                        <div class="form-group"><label>初二下期末</label><input type="number" id="addRank_初二下" placeholder="排名"></div>
-                        <div class="form-group"><label>初三上期中</label><input type="number" id="addRank_初三上期中" placeholder="排名"></div>
-                        <div class="form-group"><label>初三上期末排名</label><input type="number" id="addRank_初三上期末" placeholder="排名"></div>
+                        <div class="form-group">
+                            <label>初二上期末</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="addScore_初二上" placeholder="分数">
+                                <input type="number" id="addRank_初二上" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初二下期末</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="addScore_初二下" placeholder="分数">
+                                <input type="number" id="addRank_初二下" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三上期中</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="addScore_初三上期中" placeholder="分数">
+                                <input type="number" id="addRank_初三上期中" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三上期末</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="addScore_初三上期末" placeholder="分数">
+                                <input type="number" id="addRank_初三上期末" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三一模</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="addScore_一模" placeholder="分数">
+                                <input type="number" id="addRank_初三一模" placeholder="排名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>初三二模</label>
+                            <div class="score-rank-row">
+                                <input type="text" id="addScore_二模" placeholder="分数">
+                                <input type="number" id="addRank_初三二模" placeholder="排名">
+                            </div>
+                        </div>
                     </div>
-                    <!-- 第三组：成绩信息 -->
-                    <div class="form-section-title">成绩信息</div>
+                    <!-- 第三组：测试评估 -->
+                    <div class="form-section-title">测试评估</div>
                     <div class="form-grid">
-                        <div class="form-group"><label>初三上期末分数</label><input type="text" id="addScore_初三上期末" placeholder="分数"></div>
-                        <div class="form-group"><label>初三一模分数</label><input type="text" id="addScore_一模" placeholder="分数"></div>
-                        <div class="form-group"><label>初三二模分数</label><input type="text" id="addScore_二模" placeholder="分数"></div>
                         <div class="form-group"><label>测试试卷</label><input type="text" id="addTest_paper" placeholder="请输入测试试卷"></div>
                         <div class="form-group"><label>测试地点</label><input type="text" id="addTest_location" placeholder="请输入测试地点"></div>
                         <div class="form-group"><label>数学</label><input type="text" id="addMath_score" placeholder="数学成绩"></div>
