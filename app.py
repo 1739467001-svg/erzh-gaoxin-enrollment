@@ -2,10 +2,16 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import uuid
 import pandas as pd
 import hashlib
+
+# 北京时区 UTC+8
+BEIJING_TZ = timezone(timedelta(hours=8))
+
+def beijing_now():
+    return datetime.now(BEIJING_TZ).strftime('%Y-%m-%d %H:%M:%S')
 
 app = Flask(__name__)
 CORS(app)
@@ -36,7 +42,7 @@ def add_log(operator, action, target='', detail=''):
         c = conn.cursor()
         c.execute(
             'INSERT INTO operation_logs (operator, action, target, detail, log_time) VALUES (?, ?, ?, ?, ?)',
-            (operator, action, target, detail, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            (operator, action, target, detail, beijing_now())
         )
         conn.commit()
         conn.close()
@@ -195,7 +201,7 @@ def login():
 def add_student():
     try:
         data = request.json
-        create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        create_time = beijing_now()
         conn = get_db()
         c = conn.cursor()
         c.execute('''INSERT INTO students (
@@ -691,7 +697,7 @@ def batch_sign():
             return jsonify({'success': False, 'message': '没有学生数据'})
         conn = get_db()
         c = conn.cursor()
-        create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        create_time = beijing_now()
         success_count = 0
         for s in students:
             try:
@@ -768,7 +774,7 @@ def upload_exam_paper():
         filename = 'paper_' + str(uuid.uuid4()) + ext
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        upload_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        upload_time = beijing_now()
         conn = get_db()
         c = conn.cursor()
         c.execute('INSERT INTO exam_papers (title, year, description, file_path, uploader, upload_time) VALUES (?, ?, ?, ?, ?, ?)',
@@ -822,7 +828,7 @@ def import_excel():
             conn = get_db()
             c = conn.cursor()
             for index, row in df.iterrows():
-                create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                create_time = beijing_now()
                 c.execute('''INSERT INTO students (
                     name, gender, phone1, phone2, district, school, graduation_year,
                     class_name, grade_total, rank_初一上, rank_初一下, rank_初二上,

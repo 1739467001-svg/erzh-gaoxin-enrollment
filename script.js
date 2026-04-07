@@ -1407,6 +1407,7 @@ async function loadExamPapers() {
                 <div class="paper-actions">
                     <button class="btn btn-primary" style="width:auto;padding:8px 18px;" onclick="previewPaper('${p.file_path}', '${p.title}')">预览</button>
                     ${currentUser && currentUser.role === 'admin' ? `<button class="btn btn-danger" style="width:auto;padding:8px 14px;" onclick="deletePaper(${p.id})">删除</button>` : ''}
+                    <button class="btn btn-secondary" style="width:auto;padding:8px 14px;background:#17a2b8;border-color:#17a2b8;" onclick="downloadPaper('${p.file_path}', '${p.title}')">下载</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -1450,4 +1451,14 @@ async function deletePaper(id) {
     } else {
         showToast('删除失败：' + result.message, 'error');
     }
+}
+
+function downloadPaper(filePath, title) {
+    const url = `${API_BASE}/uploads/${filePath}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = title + '.' + filePath.split('.').pop();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
