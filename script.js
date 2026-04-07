@@ -761,6 +761,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const uploadData = await uploadRes.json();
                 if (uploadData.success) filePath = uploadData.file_path;
             }
+            // 前端验证新增必填字段
+            const promisedClass = document.getElementById('regPromisedClass').value;
+            const isSigned = document.getElementById('regIsSigned').value;
+            if (!promisedClass) {
+                showToast('请选择签约班型', 'error');
+                return;
+            }
             const data = {
                 name: document.getElementById('studentName').value,
                 school: document.getElementById('school').value,
@@ -768,6 +775,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 phone1: document.getElementById('phone1').value,
                 reason: document.getElementById('reason').value,
                 score: document.getElementById('score').value,
+                promised_class: promisedClass,
+                is_signed: parseInt(isSigned),
                 file_path: filePath,
                 remark: document.getElementById('remark').value,
                 teacher: currentUser.name
