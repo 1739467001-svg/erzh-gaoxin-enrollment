@@ -253,17 +253,17 @@ function switchToAdmin() {
     document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
     document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
     document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    // 右上角“新增签约”按钮：管理员和超级管理员可见（在试卷浏览左边）
+    // 右上角"新增签约"按钮：管理员、超级管理员、签约老师均可见
     const navSignBtn = document.getElementById('navSignBtn');
-    if (navSignBtn) navSignBtn.style.display = isManager ? 'inline-block' : 'none';
-    // 工具栏按钮权限：teacher 只能看到导出和下载模板
+    if (navSignBtn) navSignBtn.style.display = (isManager || isTeacher) ? 'inline-block' : 'none';
+    // 工具栏按钮权限：签约老师也可以新增学生和新增签约
     const adminToolbar = document.getElementById('adminToolbar');
     if (adminToolbar) {
         const btnNewStudent = document.getElementById('btnNewStudent');
         const btnImportSign = document.getElementById('btnImportSign');
         const btnExport = document.getElementById('btnExport');
         const btnTemplate = document.getElementById('btnTemplate');
-        if (btnNewStudent) btnNewStudent.style.display = isTeacher ? 'none' : 'inline-block';
+        if (btnNewStudent) btnNewStudent.style.display = 'inline-block';
         if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
         if (btnExport) btnExport.style.display = 'inline-block';
         if (btnTemplate) btnTemplate.style.display = 'inline-block';
