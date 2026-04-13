@@ -73,10 +73,10 @@ function closeAllMobileMenus() {
 // 学校数据（来源：杭州初中学校Excel）
 // ============================================================
 const SCHOOL_DATA = {
-  '上城区': ['建兰中学','采荷实验学校','杭州中学','钱学森学校','开元中学','惠兴中学','江城中学','勇进实验学校','杭州第十中学','清河实验学校','澎扬中学','澎诚中学','钱江外国语实验学校','采荷中学','钱江新城实验学校','笕桥实验中学','天杭实验学校','景荷中学','丁荷中学','四季青中学','丁兰实验中学','东城中学','东城实验学校','东城第二实验学校','夏衍初级中学','浙江省教育科学研究院附属实验学校','丁蕙实验中学','笕成中学','杭州天成教育集团','景芳中学','杭州第六中学'],
-  '拱墅区': ['文澜中学+文澜实验','星澜中学','育才中学','育才大城北学校','锦绣中学','启正中学','观成实验学校','观成武林中学','大成岳家湾实验学校','大成实验学校','风华中学','春蕾中学','青春中学','朝晖中学','胜蓝中学','景成实验学校','风帆中学','明珠实验学校','安吉路实验学校','安吉路教育集团新天地实验学校','行知中学','上海世外学校','华东师范大学附属杭州学校','杭州北苑实验中学','大关中学','大关实验中学','拱宸中学','文晖中学','杭师大文晖实验学校','启航中学','树兰中学','康桥中学','长阳中学','桃源中学'],
-  '西湖区': ['公益中学','之江实验中学','十三中教育集团(总校)','嘉绿苑中学','保俶塔实验学校','保俶塔申花实验学校','第十五中学教育集团(浙大附初)','第十五中学教育集团(崇德校区)','丰潭中学','景汇中学','周浦、袁浦中学(也称双浦)','西湖第一实验学校','西溪中学','三墩中学','弘益中学','西子实验学校','西溪实验学校','杭州云谷学校','上泗中学','紫金港中学','翠苑中学','文华中学','文理中学','杭州仁和实验学校','文溪中学','浙江工业大学附属实验学校'],
-  '滨江区': ['杭州二中白马湖学校','杭州湖畔学校','长河中学','江南实验学校','闻涛中学','高新实验学校','滨和中学','浦沿中学','滨兰实验学校','滨兴学校','西兴中学','滨文中学','杭州竺可桢学校','启成学校','养正学校','文海实验学校','文海实验中学','文海启源中学','观澜中学','学正中学','下沙中学','实验外国语学校','景苑中学','新湾中学','义蓬中学','金沙湖实验学校']
+  '上城区': ['建兰中学','采荷C学校','杭州中学','钱学森学校','开元中学','惠兴中学','江城中学','勇进C学校','杭州第十中学','清河C学校','澎扬中学','澎诚中学','钱江外国语C学校','采荷中学','钱江新城C学校','笕桥C中学','天杭C学校','景荷中学','丁荷中学','四季青中学','丁兰C中学','东城中学','东城C学校','东城第二C学校','夏衍初级中学','浙江省教育科学研究院附属C学校','丁蕙C中学','笕成中学','杭州天成教育集团','景芳中学','杭州第六中学'],
+  '拱墅区': ['文澜中学+文澜C','星澜中学','育才中学','育才大城北学校','锦绣中学','启正中学','观成C学校','观成武林中学','大成岳家湾C学校','大成C学校','风华中学','春蕾中学','青春中学','朝晖中学','胜蓝中学','景成C学校','风帆中学','明珠C学校','安吉路C学校','安吉路教育集团新天地C学校','行知中学','上海世外学校','华东师范大学附属杭州学校','杭州北苑C中学','大关中学','大关C中学','拱宸中学','文晖中学','杭师大文晖C学校','启航中学','树兰中学','康桥中学','长阳中学','桃源中学'],
+  '西湖区': ['公益中学','之江C中学','十三中教育集团(总校)','嘉绿苑中学','保俶塔C学校','保俶塔申花C学校','第十五中学教育集团(浙大附初)','第十五中学教育集团(崇德校区)','丰潭中学','景汇中学','周浦、袁浦中学(也称双浦)','西湖第一C学校','西溪中学','三墩中学','弘益中学','西子C学校','西溪C学校','杭州云谷学校','上泗中学','紫金港中学','翠苑中学','文华中学','文理中学','杭州仁和C学校','文溪中学','浙江工业大学附属C学校'],
+  '滨江区': ['杭州二中白马湖学校','杭州湖畔学校','长河中学','江南C学校','闻涛中学','高新C学校','滨和中学','浦沿中学','滨兰C学校','滨兴学校','西兴中学','滨文中学','杭州竺可桢学校','启成学校','养正学校','文海C学校','文海C中学','文海启源中学','观澜中学','学正中学','下沙中学','C外国语学校','景苑中学','新湾中学','义蓬中学','金沙湖C学校']
 };
 
 // 所有学校（含"其他"）
@@ -253,10 +253,10 @@ function switchToAdmin() {
     document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
     document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
     document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    // 右上角"新增签约"按钮：管理员、超级管理员、签约老师均可见
+    // 右上角"新增认定"按钮：管理员、超级管理员、认定老师均可见
     const navSignBtn = document.getElementById('navSignBtn');
     if (navSignBtn) navSignBtn.style.display = (isManager || isTeacher) ? 'inline-block' : 'none';
-    // 工具栏按钮权限：签约老师也可以新增学生和新增签约
+    // 工具栏按钮权限：认定老师也可以新增学生和新增认定
     const adminToolbar = document.getElementById('adminToolbar');
     if (adminToolbar) {
         const btnNewStudent = document.getElementById('btnNewStudent');
@@ -316,14 +316,14 @@ async function switchToLogs() {
 }
 
 function roleLabel(role) {
-    const map = { admin: '超级管理员', manager: '管理员', teacher: '签约老师' };
+    const map = { admin: '超级管理员', manager: '管理员', teacher: '认定老师' };
     return map[role] || role;
 }
 
 /**
  * 判断当前用户是否可以编辑/删除某个学生
  * - 超级管理员和管理员：可操作所有学生
- * - 签约老师：只能操作自己登记的学生
+ * - 认定老师：只能操作自己登记的学生
  */
 function canEditDelete(student) {
     if (!currentUser) return false;
@@ -409,7 +409,7 @@ async function loadStatistics() {
         // 各行政区
         renderBarChart('districtChart', data.by_district.map(d => ({ label: d.district, value: d.count })));
 
-        // 各老师签约
+        // 各老师认定
         renderBarChart('teacherChart', data.by_teacher.map(t => ({
             label: t.teacher,
             value: t.total,
@@ -425,8 +425,8 @@ async function loadStatistics() {
         // 系统概况
         const overviewData = [
             { label: '学生总数', value: data.total },
-            { label: '已签约', value: data.signed },
-            { label: '未签约', value: data.unsigned },
+            { label: '已认定', value: data.signed },
+            { label: '未认定', value: data.unsigned },
             { label: '试卷数量', value: data.paper_total }
         ];
         renderBarChart('overviewChart', overviewData, 'green');
@@ -511,7 +511,7 @@ function getLogBadgeClass(action) {
     if (action.includes('新增') || action.includes('添加') || action.includes('上传')) return 'add';
     if (action.includes('编辑') || action.includes('修改') || action.includes('密码')) return 'edit';
     if (action.includes('删除')) return 'delete';
-    if (action.includes('签约')) return 'sign';
+    if (action.includes('认定')) return 'sign';
     return 'default';
 }
 
@@ -626,7 +626,7 @@ function renderStudentTable(students) {
             <td>${s.total_score || ''}</td>
             <td>${s.evaluation || ''}</td>
             <td>${s.promised_class || ''}</td>
-            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '已签约' : '未签约'}</span></td>
+            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '已认定' : '未认定'}</span></td>
             <td>${s.file_path ? `<a href="/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : ''}</td>
             <td>${s.remark || ''}</td>
             <td>${s.teacher || ''}</td>
@@ -765,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const promisedClass = document.getElementById('regPromisedClass').value;
             const isSigned = document.getElementById('regIsSigned').value;
             if (!promisedClass) {
-                showToast('请选择签约班型', 'error');
+                showToast('请选择认定班型', 'error');
                 return;
             }
             const data = {
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await res.json();
             if (result.success) {
-                showToast('学生签约登记成功！', 'success');
+                showToast('学生认定登记成功！', 'success');
                 studentForm.reset();
             } else {
                 showToast('登记失败：' + result.message, 'error');
@@ -1081,7 +1081,7 @@ function exportToExcel() {
     const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
         '初一上期末年级排名','初一下期末年级排名','初二上期末年级排名','初二下期末年级排名','初三上期中年级排名','初三上期末排名',
         '初三上期末分数','初三一模分数','初三二模分数','测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
-        '是否已签约','备注','负责老师','登记时间'];
+        '是否已认定','备注','负责老师','登记时间'];
     const rows = allStudents.map(s => [
         s.name, s.gender, s.phone1, s.phone2, s.district, s.school, s.graduation_year, s.class_name, s.grade_total,
         s['rank_初一上'], s['rank_初一下'], s['rank_初二上'], s['rank_初二下'], s['rank_初三上期中'], s['rank_初三上期末'],
@@ -1099,7 +1099,7 @@ function downloadExcelTemplate() {
     const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
         '初一上期末年级排名','初一下期末年级排名','初二上期末年级排名','初二下期末年级排名','初三上期中年级排名','初三上期末排名',
         '初三上期末分数','初三一模分数','初三二模分数','测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
-        '是否已签约','负责老师'];
+        '是否已认定','负责老师'];
     const example = ['张三','男','13800000001','13900000002','高新区','某中学','2024','初三(1)班','500',
         '10','8','12','9','7','6','560','580','590','2024年测评卷','高新校区','120','110','580','A','创新班',
         '否','王老师'];
@@ -1110,7 +1110,7 @@ function downloadExcelTemplate() {
 }
 
 // ============================================================
-// Excel导入签约审核流程
+// Excel导入认定审核流程
 // ============================================================
 function resetSignPage() {
     signPreviewStudents = [];
@@ -1332,11 +1332,11 @@ function proceedToConfirm() {
             </div>
             <div class="stat-item stat-signed">
                 <div class="stat-num">${signedCount}</div>
-                <div class="stat-label">已签约</div>
+                <div class="stat-label">已认定</div>
             </div>
             <div class="stat-item stat-unsigned">
                 <div class="stat-num">${signPreviewStudents.length - signedCount}</div>
-                <div class="stat-label">未签约</div>
+                <div class="stat-label">未认定</div>
             </div>
         </div>
         <p style="margin-top: 15px; color: #555;">操作人：<strong>${currentUser.name}</strong>　提交时间：<strong>${new Date().toLocaleString()}</strong></p>
@@ -1364,14 +1364,14 @@ async function confirmBatchSign() {
             showToast('✓ ' + result.message, 'success');
             setTimeout(() => switchToAdmin(), 1200);
         } else {
-            showToast('签约失败：' + result.message, 'error');
+            showToast('认定失败：' + result.message, 'error');
             btn.disabled = false;
-            btn.textContent = '确认签约';
+            btn.textContent = '确认认定';
         }
     } catch (e) {
         showToast('网络错误，请重试', 'error');
         btn.disabled = false;
-        btn.textContent = '确认签约';
+        btn.textContent = '确认认定';
     }
 }
 

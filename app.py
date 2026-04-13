@@ -672,7 +672,7 @@ def preview_excel():
                 'total_score': safe(row.get('总分', '')),
                 'evaluation': safe(row.get('评价等级', '')),
                 'promised_class': safe(row.get('承诺班型', '')),
-                'is_signed': 1 if safe(row.get('是否已签约', '否')).strip() in ['是', '1', 'True', '已签约'] else 0,
+                'is_signed': 1 if safe(row.get('是否已认定', '否')).strip() in ['是', '1', 'True', '已认定'] else 0,
                 'reason': '',
                 'score': safe(row.get('总分', '')),
                 'file_path': '',
@@ -686,7 +686,7 @@ def preview_excel():
 
 
 # ============================================================
-# 批量签约（审核后确认入库）
+# 批量认定（审核后确认入库）
 # ============================================================
 @app.route('/api/batch-sign', methods=['POST'])
 def batch_sign():
@@ -728,8 +728,8 @@ def batch_sign():
                 pass
         conn.commit()
         conn.close()
-        add_log(teacher, '批量签约', f'{success_count}名学生', f'共提交{len(students)}条')
-        return jsonify({'success': True, 'message': f'成功签约 {success_count} 名学生', 'count': success_count})
+        add_log(teacher, '批量认定', f'{success_count}名学生', f'共提交{len(students)}条')
+        return jsonify({'success': True, 'message': f'成功认定 {success_count} 名学生', 'count': success_count})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -850,8 +850,8 @@ def import_excel():
                     row.get('测试试卷', ''), row.get('测试地点', ''),
                     row.get('数学', ''), row.get('英语', ''), row.get('总分', ''),
                     row.get('评价等级', ''), row.get('承诺班型', ''),
-                    1 if row.get('是否已签约', '否') == '是' else 0,
-                    row.get('签约理由', ''), row.get('成绩', ''),
+                    1 if row.get('是否已认定', '否') == '是' else 0,
+                    row.get('认定理由', ''), row.get('成绩', ''),
                     row.get('文件路径', ''), row.get('备注', ''),
                     row.get('负责老师', ''), create_time
                 ))
