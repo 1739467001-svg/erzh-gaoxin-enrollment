@@ -752,15 +752,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // 前端验证新增必填字段
             const promisedClass = document.getElementById('regPromisedClass').value;
             const isSigned = document.getElementById('regIsSigned').value;
+            const district = document.getElementById('regDistrict').value;
             if (!promisedClass) {
                 showToast('请选择认定班型', 'error');
+                return;
+            }
+            if (!district) {
+                showToast('请选择行政区', 'error');
                 return;
             }
             const data = {
                 name: document.getElementById('studentName').value,
                 school: document.getElementById('school').value,
-                district: document.getElementById('regDistrict') ? document.getElementById('regDistrict').value : '',
+                district: district,
                 phone1: document.getElementById('phone1').value,
+                phone2: document.getElementById('phone2').value,
                 reason: document.getElementById('reason').value,
                 score: document.getElementById('score').value,
                 promised_class: promisedClass,
