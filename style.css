@@ -579,6 +579,13 @@ thead th:nth-child(2) {
     position: sticky;
     left: 0;
     z-index: 11;
+    background: linear-gradient(135deg, #0f2b5e 0%, #1e5fbb 100%);
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 左侧第二列的右边框 */
+thead th:nth-child(2) {
+    border-right: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 /* 右侧操作列固定 */
@@ -586,6 +593,9 @@ thead th:last-child {
     position: sticky;
     right: 0;
     z-index: 11;
+    background: linear-gradient(135deg, #0f2b5e 0%, #1e5fbb 100%);
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.15);
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 tbody tr {
@@ -612,7 +622,13 @@ tbody td:nth-child(2) {
     position: sticky;
     left: 0;
     z-index: 9;
-    background: inherit;
+    background: #ffffff;
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 左侧第二列的右边框 */
+tbody td:nth-child(2) {
+    border-right: 1px solid #e2e8f0;
 }
 
 /* 右侧操作列固定 */
@@ -620,14 +636,21 @@ tbody td:last-child {
     position: sticky;
     right: 0;
     z-index: 9;
-    background: inherit;
+    background: #ffffff;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.08);
+    border-left: 1px solid #e2e8f0;
 }
 
 /* 悬停时保持背景颜色一致 */
 tbody tr:hover td:nth-child(1),
-tbody tr:hover td:nth-child(2),
+tbody tr:hover td:nth-child(2) {
+    background: linear-gradient(90deg, rgba(59,130,246,0.04), rgba(59,130,246,0.08));
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.08);
+}
+
 tbody tr:hover td:last-child {
     background: linear-gradient(90deg, rgba(59,130,246,0.04), rgba(59,130,246,0.08));
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.08);
 }
 
 /* ===================================================
