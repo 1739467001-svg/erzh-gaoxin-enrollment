@@ -68,7 +68,7 @@
                             <input type="text" id="school" placeholder="输入学校名称搜索..." autocomplete="off" oninput="onSchoolInput('reg')" onfocus="onSchoolInput('reg')" required>
                             <div class="school-dropdown" id="regSchoolDropdown"></div>
                         </div>
-                        <div class="form-group"><label>认定理由 <span class="required">*</span></label><select id="reason" required><option value="">请选择认定理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                        <div class="form-group"><label>认定理由 <span class="required">*</span></label><select id="reason" required><option value="">请选择认定理由</option><option value="九上期末成绩">九上期末成绩</option><option value="素质评价成绩">素质评价成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option></select></div>
                         <div class="form-group"><label>成绩 <span class="required">*</span></label><input type="text" id="score" placeholder="如：580、A、B+等" required></div>
                         <div class="form-group"><label>认定班型 <span class="required">*</span></label><select id="regPromisedClass" required><option value="">请选择认定班型</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
                         <div class="form-group"><label>是否认定 <span class="required">*</span></label><select id="regIsSigned" required><option value="1">是</option><option value="0">否</option></select></div>
@@ -286,7 +286,7 @@
                     <div class="form-grid">
                         <div class="form-group"><label>承诺班型</label><select id="addPromised_class"><option value="">请选择承诺班型</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
                         <div class="form-group"><label>是否已认定</label><select id="addIs_signed"><option value="0">否</option><option value="1">是</option></select></div>
-                        <div class="form-group"><label>认定理由</label><select id="addReason"><option value="">请选择认定理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                        <div class="form-group"><label>认定理由</label><select id="addReason"><option value="">请选择认定理由</option><option value="九上期末成绩">九上期末成绩</option><option value="素质评价成绩">素质评价成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option></select></div>
                         <div class="form-group"><label>成绩</label><input type="text" id="addScore" placeholder="如：580、A、B+等"></div>
                         <div class="form-group form-group-full"><label>成绩图片或PDF文件</label><input type="file" id="addFile" accept=".jpg,.jpeg,.png,.pdf"><p id="addFileError" class="error-message" style="display: none;">请上传文件</p></div>
                         <div class="form-group form-group-full"><label>备注</label><textarea id="addRemark" placeholder="请输入备注信息"></textarea></div>
@@ -404,7 +404,7 @@
                     <div class="form-grid">
                         <div class="form-group"><label>承诺班型</label><select id="editPromised_class"><option value="">请选择承诺班型</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
                         <div class="form-group"><label>是否已认定</label><select id="editIs_signed"><option value="0">否</option><option value="1">是</option></select></div>
-                        <div class="form-group"><label>认定理由</label><select id="editReason"><option value="">请选择认定理由</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                        <div class="form-group"><label>认定理由</label><select id="editReason"><option value="">请选择认定理由</option><option value="九上期末成绩">九上期末成绩</option><option value="素质评价成绩">素质评价成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option></select></div>
                         <div class="form-group"><label>成绩</label><input type="text" id="editScore" placeholder="如：580、A、B+等"></div>
                         <div class="form-group form-group-full"><label>成绩图片或PDF文件（不修改请留空）</label><input type="file" id="editFile" accept=".jpg,.jpeg,.png,.pdf"><p id="currentFile" data-path="" style="font-size:12px;color:#888;margin-top:4px;"></p></div>
                         <div class="form-group form-group-full"><label>备注</label><textarea id="editRemark" placeholder="请输入备注信息"></textarea></div>
@@ -799,7 +799,7 @@
                     <div class="form-group"><label>是否认定</label><select id="signEditIsSigned"><option value="0">否</option><option value="1">是</option></select></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>认定理由</label><select id="signEditReason"><option value="">请选择</option><option value="测评成绩">测评成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option><option value="其他">其他</option></select></div>
+                    <div class="form-group"><label>认定理由</label><select id="signEditReason"><option value="">请选择</option><option value="九上期末成绩">九上期末成绩</option><option value="素质评价成绩">素质评价成绩</option><option value="一模成绩">一模成绩</option><option value="二模成绩">二模成绩</option></select></div>
                     <div class="form-group"><label>负责老师</label><input type="text" id="signEditTeacher"></div>
                 </div>
                 <div class="form-group"><label>备注</label><textarea id="signEditRemark" style="min-height: 60px;"></textarea></div>
