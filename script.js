@@ -594,6 +594,17 @@ function renderStudentTable(students) {
         tbody.innerHTML = '<tr><td colspan="32" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
         return;
     }
+
+    // 辅助函数：截断長文本并添加 title 提示
+    const truncateText = (text, maxLen = 20) => {
+        if (!text) return '';
+        const str = String(text);
+        if (str.length > maxLen) {
+            return `<span title="${str}">${str.substring(0, maxLen)}...</span>`;
+        }
+        return str;
+    };
+
 	    students.forEach((s, idx) => {
 	        const tr = document.createElement('tr');
 	        tr.innerHTML = `
@@ -603,7 +614,7 @@ function renderStudentTable(students) {
 	            <td>${s.phone1 || ''}</td>
 	            <td>${s.phone2 || ''}</td>
 	            <td>${s.district || ''}</td>
-	            <td>${s.school || ''}</td>
+	            <td>${truncateText(s.school, 25)}</td>
 	            <td>${s.graduation_year || ''}</td>
 	            <td>${s.class_name || ''}</td>
 	            <td>${s.grade_total || ''}</td>
@@ -623,7 +634,7 @@ function renderStudentTable(students) {
 	            <td>${s.promised_class || ''}</td>
 	            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
 	            <td>${s.file_path ? `<a href="${API_BASE}/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : '无'}</td>
-	            <td>${s.remark || ''}</td>
+	            <td>${truncateText(s.remark, 18)}</td>
 	            <td>${s.teacher || ''}</td>
 	            <td>${s.createTime || ''}</td>
 	            <td>
