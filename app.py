@@ -616,7 +616,8 @@ def preview_excel():
     if file.filename == '':
         return jsonify({'success': False, 'message': '未选择文件'})
     try:
-        df = pd.read_excel(file)
+        # 强制所有列读取为字符串，防止前导0丢失
+        df = pd.read_excel(file, dtype=str)
         df = df[df['学生姓名'].notna() & (df['学生姓名'].astype(str).str.strip() != '') & (df['学生姓名'].astype(str).str.strip() != 'nan')]
 
         students = []
@@ -671,7 +672,7 @@ def preview_excel():
                 'total_score': safe(row.get('总分', '')),
                 'evaluation': safe(row.get('评价等级', '')),
                 'promised_class': safe(row.get('承诺班型', '')),
-                'is_signed': 1 if safe(row.get('是否已签约', '否')) == '是' else 0,
+                'is_signed': 1 if safe(row.get('是否已签约', '否')).strip() in ['是', '1', 'True', '已签约'] else 0,
                 'reason': '',
                 'score': safe(row.get('总分', '')),
                 'file_path': '',
