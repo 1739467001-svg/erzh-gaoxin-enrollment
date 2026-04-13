@@ -594,44 +594,39 @@ function renderStudentTable(students) {
         tbody.innerHTML = '<tr><td colspan="32" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
         return;
     }
-    students.forEach((s, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${idx + 1}</td>
-            <td>${s.name || ''}</td>
-            <td>${s.gender || ''}</td>
-            <td>${s.phone1 || ''}</td>
-            <td>${s.phone2 || ''}</td>
-            <td>${s.district || ''}</td>
-            <td>${s.school || ''}</td>
-            <td>${s.graduation_year || ''}</td>
-            <td>${s.class_name || ''}</td>
-            <td>${s.grade_total || ''}</td>
-            <td>${s['score_初二上'] || ''}</td>
-            <td>${s['rank_初二上'] || ''}</td>
-            <td>${s['score_初二下'] || ''}</td>
-            <td>${s['rank_初二下'] || ''}</td>
-            <td>${s['score_初三上期中'] || ''}</td>
-            <td>${s['rank_初三上期中'] || ''}</td>
-            <td>${s['score_初三上期末'] || ''}</td>
-            <td>${s['rank_初三上期末'] || ''}</td>
-            <td>${s['score_一模'] || ''}</td>
-            <td>${s['rank_初三一模'] || ''}</td>
-            <td>${s['score_二模'] || ''}</td>
-            <td>${s['rank_初三二模'] || ''}</td>
-            <td>${s.test_paper || ''}</td>
-            <td>${s.test_location || ''}</td>
-            <td>${s.math_score || ''}</td>
-            <td>${s.english_score || ''}</td>
-            <td>${s.total_score || ''}</td>
-            <td>${s.evaluation || ''}</td>
-            <td>${s.promised_class || ''}</td>
-            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '已认定' : '未认定'}</span></td>
-            <td>${s.file_path ? `<a href="/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : ''}</td>
-            <td>${s.remark || ''}</td>
-            <td>${s.teacher || ''}</td>
-            <td>${s.createTime || ''}</td>
-            <td>
+	    students.forEach((s, idx) => {
+	        const tr = document.createElement('tr');
+	        tr.innerHTML = `
+	            <td>${idx + 1}</td>
+	            <td>${s.name || ''}</td>
+	            <td>${s.gender || ''}</td>
+	            <td>${s.phone1 || ''}</td>
+	            <td>${s.phone2 || ''}</td>
+	            <td>${s.district || ''}</td>
+	            <td>${s.school || ''}</td>
+	            <td>${s.graduation_year || ''}</td>
+	            <td>${s.class_name || ''}</td>
+	            <td>${s.grade_total || ''}</td>
+	            <td>${s['rank_初一上'] || ''}</td>
+	            <td>${s['rank_初一下'] || ''}</td>
+	            <td>${s['rank_初二上'] || ''}</td>
+	            <td>${s['rank_初二下'] || ''}</td>
+	            <td>${s['score_初三上期末'] || ''}</td>
+	            <td>${s['score_一模'] || ''}</td>
+	            <td>${s['score_二模'] || ''}</td>
+	            <td>${s.test_paper || ''}</td>
+	            <td>${s.test_location || ''}</td>
+	            <td>${s.math_score || ''}</td>
+	            <td>${s.english_score || ''}</td>
+	            <td>${s.total_score || ''}</td>
+	            <td>${s.evaluation || ''}</td>
+	            <td>${s.promised_class || ''}</td>
+	            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
+	            <td>${s.file_path ? `<a href="${API_BASE}/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : '无'}</td>
+	            <td>${s.remark || ''}</td>
+	            <td>${s.teacher || ''}</td>
+	            <td>${s.createTime || ''}</td>
+	            <td>
                 ${canEditDelete(s) ? `<button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>` : ''}
                 ${canEditDelete(s) ? `<button class="btn-table btn-delete" onclick="deleteStudent(${s.id})">删除</button>` : ''}
             </td>
@@ -699,22 +694,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 gender: document.getElementById('addGender').value,
                 phone1: document.getElementById('addPhone1').value,
                 phone2: document.getElementById('addPhone2').value,
-                district: document.getElementById('addDistrict') ? document.getElementById('addDistrict').value : '',
+                district: document.getElementById('addDistrict').value,
                 school: document.getElementById('addSchool').value,
                 graduation_year: document.getElementById('addGraduation_year').value || null,
                 class_name: document.getElementById('addClass_name').value,
                 grade_total: document.getElementById('addGrade_total').value || null,
-                'rank_初一上': null,
-                'rank_初一下': null,
-                'rank_初二上': document.getElementById('addRank_初二上').value || null,
-                'rank_初二下': document.getElementById('addRank_初二下').value || null,
-                'rank_初三上期中': document.getElementById('addRank_初三上期中').value || null,
-                'rank_初三上期末': document.getElementById('addRank_初三上期末').value || null,
-                'rank_初三一模': document.getElementById('addRank_初三一模').value || null,
-                'rank_初三二模': document.getElementById('addRank_初三二模').value || null,
-                'score_初二上': document.getElementById('addScore_初二上').value,
-                'score_初二下': document.getElementById('addScore_初二下').value,
-                'score_初三上期中': document.getElementById('addScore_初三上期中').value,
+                'rank_初一上': document.getElementById('addRank_初二上').value || null,
+                'rank_初一下': document.getElementById('addRank_初二下').value || null,
+                'rank_初二上': document.getElementById('addRank_初三上期中').value || null,
+                'rank_初二下': document.getElementById('addRank_初三上期末').value || null,
                 'score_初三上期末': document.getElementById('addScore_初三上期末').value,
                 'score_一模': document.getElementById('addScore_一模').value,
                 'score_二模': document.getElementById('addScore_二模').value,
@@ -821,18 +809,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 graduation_year: document.getElementById('editGraduation_year').value || null,
                 class_name: document.getElementById('editClass_name').value,
                 grade_total: document.getElementById('editGrade_total').value || null,
-                'rank_初二上': document.getElementById('editRank_初二上').value || null,
-                'rank_初二下': document.getElementById('editRank_初二下').value || null,
-                'rank_初三上期中': document.getElementById('editRank_初三上期中').value || null,
-                'rank_初三上期末': document.getElementById('editRank_初三上期末').value || null,
-                'score_初二上': document.getElementById('editScore_初二上').value,
-                'score_初二下': document.getElementById('editScore_初二下').value,
-                'score_初三上期中': document.getElementById('editScore_初三上期中').value,
+                'rank_初一上': document.getElementById('editRank_初二上').value || null,
+                'rank_初一下': document.getElementById('editRank_初二下').value || null,
+                'rank_初二上': document.getElementById('editRank_初三上期中').value || null,
+                'rank_初二下': document.getElementById('editRank_初三上期末').value || null,
                 'score_初三上期末': document.getElementById('editScore_初三上期末').value,
                 'score_一模': document.getElementById('editScore_一模').value,
                 'score_二模': document.getElementById('editScore_二模').value,
-                'rank_初三一模': document.getElementById('editRank_初三一模').value || null,
-                'rank_初三二模': document.getElementById('editRank_初三二模').value || null,
                 test_paper: document.getElementById('editTest_paper').value,
                 test_location: document.getElementById('editTest_location').value,
                 math_score: document.getElementById('editMath_score').value,
@@ -955,18 +938,13 @@ async function editStudent(id) {
         document.getElementById('editGraduation_year').value = s.graduation_year || '';
         document.getElementById('editClass_name').value = s.class_name || '';
         document.getElementById('editGrade_total').value = s.grade_total || '';
-        document.getElementById('editScore_初二上').value = s['score_初二上'] || '';
-        document.getElementById('editRank_初二上').value = s['rank_初二上'] || '';
-        document.getElementById('editScore_初二下').value = s['score_初二下'] || '';
-        document.getElementById('editRank_初二下').value = s['rank_初二下'] || '';
-        document.getElementById('editScore_初三上期中').value = s['score_初三上期中'] || '';
-        document.getElementById('editRank_初三上期中').value = s['rank_初三上期中'] || '';
+        document.getElementById('editRank_初二上').value = s['rank_初一上'] || '';
+        document.getElementById('editRank_初二下').value = s['rank_初一下'] || '';
+        document.getElementById('editRank_初三上期中').value = s['rank_初二上'] || '';
+        document.getElementById('editRank_初三上期末').value = s['rank_初二下'] || '';
         document.getElementById('editScore_初三上期末').value = s['score_初三上期末'] || '';
-        document.getElementById('editRank_初三上期末').value = s['rank_初三上期末'] || '';
         document.getElementById('editScore_一模').value = s['score_一模'] || '';
-        document.getElementById('editRank_初三一模').value = s['rank_初三一模'] || '';
         document.getElementById('editScore_二模').value = s['score_二模'] || '';
-        document.getElementById('editRank_初三二模').value = s['rank_初三二模'] || '';
         document.getElementById('editTest_paper').value = s.test_paper || '';
         document.getElementById('editTest_location').value = s.test_location || '';
         document.getElementById('editMath_score').value = s.math_score || '';
@@ -1079,14 +1057,12 @@ async function deleteUser(id) {
 // ============================================================
 function exportToExcel() {
     const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
-        '初一上期末年级排名','初一下期末年级排名','初二上期末年级排名','初二下期末年级排名','初三上期中年级排名','初三上期末排名',
-        '初三上期末分数','初三一模分数','初三二模分数','测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
-        '是否已认定','备注','负责老师','登记时间'];
+        '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名','九上期末分数','一模成绩','二模成绩',
+        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型','是否已签约','备注','负责老师','登记时间'];
     const rows = allStudents.map(s => [
         s.name, s.gender, s.phone1, s.phone2, s.district, s.school, s.graduation_year, s.class_name, s.grade_total,
-        s['rank_初一上'], s['rank_初一下'], s['rank_初二上'], s['rank_初二下'], s['rank_初三上期中'], s['rank_初三上期末'],
-        s['score_初三上期末'], s['score_一模'], s['score_二模'], s.test_paper, s.test_location,
-        s.math_score, s.english_score, s.total_score, s.evaluation, s.promised_class,
+        s['rank_初一上'], s['rank_初一下'], s['rank_初二上'], s['rank_初二下'], s['score_初三上期末'], s['score_一模'], s['score_二模'],
+        s.test_paper, s.test_location, s.math_score, s.english_score, s.total_score, s.evaluation, s.promised_class,
         s.is_signed ? '是' : '否', s.remark, s.teacher, s.createTime
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -1097,12 +1073,11 @@ function exportToExcel() {
 
 function downloadExcelTemplate() {
     const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
-        '初一上期末年级排名','初一下期末年级排名','初二上期末年级排名','初二下期末年级排名','初三上期中年级排名','初三上期末排名',
-        '初三上期末分数','初三一模分数','初三二模分数','测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
-        '是否已认定','负责老师'];
-    const example = ['张三','男','13800000001','13900000002','高新区','某中学','2024','初三(1)班','500',
-        '10','8','12','9','7','6','560','580','590','2024年测评卷','高新校区','120','110','580','A','创新班',
-        '否','王老师'];
+        '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名','九上期末分数','一模成绩','二模成绩',
+        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型','是否已签约','负责老师'];
+    const example = ['张三','男','13800000001','13900000002','滨江区','某中学','2026','905','500',
+        '12','9','7','6','560','580','590','A卷','某园区','120','110','580','A','B',
+        '是','1234'];
     const ws = XLSX.utils.aoa_to_sheet([headers, example]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '学生信息模板');
@@ -1197,17 +1172,15 @@ function renderSignPreviewTable() {
             <td><span class="cell-val">${s.school || ''}</span></td>
             <td><span class="cell-val">${s.graduation_year || ''}</span></td>
             <td><span class="cell-val">${s.class_name || ''}</span></td>
-            <td><span class="cell-val">${s.grade_total || ''}</span></td>
-            <td><span class="cell-val">${s['rank_初一上'] || ''}</span></td>
-            <td><span class="cell-val">${s['rank_初一下'] || ''}</span></td>
-            <td><span class="cell-val">${s['rank_初二上'] || ''}</span></td>
-            <td><span class="cell-val">${s['rank_初二下'] || ''}</span></td>
-            <td><span class="cell-val">${s['rank_初三上期中'] || ''}</span></td>
-            <td><span class="cell-val">${s['rank_初三上期末'] || ''}</span></td>
-            <td><span class="cell-val">${s['score_初三上期末'] || ''}</span></td>
-            <td><span class="cell-val">${s['score_一模'] || ''}</span></td>
-            <td><span class="cell-val">${s['score_二模'] || ''}</span></td>
-            <td><span class="cell-val">${s.test_paper || ''}</span></td>
+	            <td><span class="cell-val">${s.grade_total || ''}</span></td>
+	            <td><span class="cell-val">${s['rank_初一上'] || ''}</span></td>
+	            <td><span class="cell-val">${s['rank_初一下'] || ''}</span></td>
+	            <td><span class="cell-val">${s['rank_初二上'] || ''}</span></td>
+	            <td><span class="cell-val">${s['rank_初二下'] || ''}</span></td>
+	            <td><span class="cell-val">${s['score_初三上期末'] || ''}</span></td>
+	            <td><span class="cell-val">${s['score_一模'] || ''}</span></td>
+	            <td><span class="cell-val">${s['score_二模'] || ''}</span></td>
+	            <td><span class="cell-val">${s.test_paper || ''}</span></td>
             <td><span class="cell-val">${s.test_location || ''}</span></td>
             <td><span class="cell-val">${s.math_score || ''}</span></td>
             <td><span class="cell-val">${s.english_score || ''}</span></td>
@@ -1250,8 +1223,6 @@ function openSignEditModal(idx) {
     document.getElementById('signEditRank1b').value = s['rank_初一下'] || '';
     document.getElementById('signEditRank2a').value = s['rank_初二上'] || '';
     document.getElementById('signEditRank2b').value = s['rank_初二下'] || '';
-    document.getElementById('signEditRank3mid').value = s['rank_初三上期中'] || '';
-    document.getElementById('signEditRank3end').value = s['rank_初三上期末'] || '';
     document.getElementById('signEditScore3end').value = s['score_初三上期末'] || '';
     document.getElementById('signEditScore1m').value = s['score_一模'] || '';
     document.getElementById('signEditScore2m').value = s['score_二模'] || '';
@@ -1290,8 +1261,6 @@ function saveSignEdit() {
         'rank_初一下': document.getElementById('signEditRank1b').value || null,
         'rank_初二上': document.getElementById('signEditRank2a').value || null,
         'rank_初二下': document.getElementById('signEditRank2b').value || null,
-        'rank_初三上期中': document.getElementById('signEditRank3mid').value || null,
-        'rank_初三上期末': document.getElementById('signEditRank3end').value || null,
         'score_初三上期末': document.getElementById('signEditScore3end').value,
         'score_一模': document.getElementById('signEditScore1m').value,
         'score_二模': document.getElementById('signEditScore2m').value,
