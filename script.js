@@ -329,7 +329,12 @@ function roleLabel(role) {
 function canEditDelete(student) {
     if (!currentUser) return false;
     if (currentUser.role === 'admin' || currentUser.role === 'manager') return true;
-    if (currentUser.role === 'teacher') return student.teacher === currentUser.name;
+    if (currentUser.role === 'teacher') {
+        // 负责老师或录入者匹配当前用户时可编辑
+        return student.assigned_teacher === currentUser.name ||
+               student.assigned_teacher === currentUser.username ||
+               student.teacher === currentUser.name;
+    }
     return false;
 }
 
@@ -521,10 +526,15 @@ function getLogBadgeClass(action) {
 // ============================================================
 async function loadStudents() {
     try {
-        // teacher 角色只加载自己登记的学生
+        // 构建请求 URL，teacher 角色将 role/username/name 传给后端，由后端按 assigned_teacher 过滤
         let url = `${API_BASE}/api/students`;
         if (currentUser && currentUser.role === 'teacher') {
-            url += `?teacher=${encodeURIComponent(currentUser.name)}`;
+            const params = new URLSearchParams({
+                role: currentUser.role,
+                username: currentUser.username || '',
+                name: currentUser.name || ''
+            });
+            url += `?${params.toString()}`;
         }
         const res = await fetch(url);
         allStudents = await res.json();
@@ -538,7 +548,7 @@ async function loadStudents() {
 // 动态填充筛选下拉选项
 function populateFilterOptions(students) {
     const districts = [...new Set(students.map(s => s.district).filter(Boolean))].sort();
-    const teachers  = [...new Set(students.map(s => s.teacher).filter(Boolean))].sort();
+    const teachers  = [...new Set(students.map(s => s.assigned_teacher || s.teacher).filter(Boolean))].sort();
     const classes   = [...new Set(students.map(s => s.promised_class).filter(Boolean))].sort();
 
     function fillSelect(id, values) {
@@ -636,8 +646,8 @@ function renderStudentTable(students) {
 	            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
 	            <td>${s.file_path ? `<a href="${API_BASE}/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : '无'}</td>
 	            <td>${truncateText(s.remark, 18)}</td>
-	            <td>${s.teacher || ''}</td>
-	            <td>${s.createTime || ''}</td>
+            <td>${s.assigned_teacher || s.teacher || ''}</td>
+            <td>${s.createTime || ''}</td>
 	            <td>
                 ${canEditDelete(s) ? `<button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>` : ''}
                 ${canEditDelete(s) ? `<button class="btn-table btn-delete" onclick="deleteStudent(${s.id})">删除</button>` : ''}
@@ -663,7 +673,7 @@ function applyFilters() {
         )) return false;
         if (signed !== '' && String(s.is_signed) !== signed) return false;
         if (district && (s.district || '') !== district) return false;
-        if (teacher  && (s.teacher  || '') !== teacher)  return false;
+        if (teacher  && (s.assigned_teacher || s.teacher || '') !== teacher)  return false;
         if (cls      && (s.promised_class || '') !== cls) return false;
         return true;
     });
@@ -1214,7 +1224,7 @@ function renderSignPreviewTable() {
             <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
             <td><span class="cell-val">${s.reason || ''}</span></td>
             <td><span class="cell-val">${s.remark || ''}</span></td>
-            <td><span class="cell-val">${s.teacher || ''}</span></td>
+            <td><span class="cell-val">${s.assigned_teacher || s.teacher || ''}</span></td>
             <td>
                 <button class="btn-table btn-edit" onclick="openSignEditModal(${idx})">编辑</button>
                 <button class="btn-table btn-delete" onclick="removeSignRow(${idx})">移除</button>
@@ -1259,7 +1269,7 @@ function openSignEditModal(idx) {
     document.getElementById('signEditPromised').value = s.promised_class || '';
     document.getElementById('signEditIsSigned').value = s.is_signed || 0;
     document.getElementById('signEditReason').value = s.reason || '';
-    document.getElementById('signEditTeacher').value = s.teacher || '';
+    document.getElementById('signEditTeacher').value = s.assigned_teacher || s.teacher || '';
     document.getElementById('signEditRemark').value = s.remark || '';
     document.getElementById('signEditModal').style.display = 'flex';
 }
@@ -1297,6 +1307,7 @@ function saveSignEdit() {
         promised_class: document.getElementById('signEditPromised').value,
         is_signed: parseInt(document.getElementById('signEditIsSigned').value),
         reason: document.getElementById('signEditReason').value,
+        assigned_teacher: document.getElementById('signEditTeacher').value,
         teacher: document.getElementById('signEditTeacher').value,
         remark: document.getElementById('signEditRemark').value,
         score: document.getElementById('signEditTotal').value,

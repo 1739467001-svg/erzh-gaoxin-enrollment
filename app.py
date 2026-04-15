@@ -98,6 +98,7 @@ def init_db():
         score TEXT DEFAULT '',
         file_path TEXT,
         remark TEXT,
+        assigned_teacher TEXT DEFAULT '',
         teacher TEXT NOT NULL,
         createTime TEXT NOT NULL
     )''')
@@ -109,6 +110,9 @@ def init_db():
         ('score_初三上期中', 'TEXT'),
         ('rank_初三一模', 'INTEGER'),
         ('rank_初三二模', 'INTEGER'),
+        ('assigned_teacher', 'TEXT'),
+        ('remark', 'TEXT'),
+        ('recognition_no', 'TEXT'),
     ]
     for col_name, col_type in new_columns:
         try:
@@ -212,8 +216,8 @@ def add_student():
             score_一模, score_二模, rank_初三一模, rank_初三二模,
             test_paper, test_location, math_score,
             english_score, total_score, evaluation, promised_class, is_signed,
-            reason, score, file_path, remark, teacher, createTime
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+            reason, score, file_path, remark, assigned_teacher, teacher, createTime
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             data['name'], data.get('gender', ''), data['phone1'], data.get('phone2', ''),
             data.get('district', ''), data['school'], data.get('graduation_year', None),
             data.get('class_name', ''), data.get('grade_total', None),
@@ -228,7 +232,9 @@ def add_student():
             data.get('math_score', ''), data.get('english_score', ''), data.get('total_score', ''),
             data.get('evaluation', ''), data.get('promised_class', ''),
             data.get('is_signed', 0), data.get('reason', ''), data.get('score', ''),
-            data.get('file_path', ''), data.get('remark', ''), data['teacher'], create_time
+            data.get('file_path', ''), data.get('remark', ''),
+            data.get('assigned_teacher', data['teacher']),  # 负责老师，默认为当前用户
+            data['teacher'], create_time
         ))
         conn.commit()
         student_id = c.lastrowid
@@ -252,6 +258,10 @@ def get_students():
     school = request.args.get('school')
     keyword = request.args.get('keyword')
     promised_class = request.args.get('promised_class')
+    # 角色权限过滤：teacher 角色只能看到分配给自己的学生
+    current_role = request.args.get('role', '')
+    current_username = request.args.get('username', '')
+    current_name = request.args.get('name', '')
 
     if is_signed is not None and is_signed != '':
         conditions.append('is_signed = ?')
@@ -260,8 +270,8 @@ def get_students():
         conditions.append('district LIKE ?')
         params.append(f'%{district}%')
     if teacher:
-        conditions.append('teacher LIKE ?')
-        params.append(f'%{teacher}%')
+        conditions.append('(teacher LIKE ? OR assigned_teacher LIKE ?)')
+        params.extend([f'%{teacher}%', f'%{teacher}%'])
     if school:
         conditions.append('school LIKE ?')
         params.append(f'%{school}%')
@@ -271,6 +281,10 @@ def get_students():
     if keyword:
         conditions.append('(name LIKE ? OR school LIKE ? OR phone1 LIKE ?)')
         params.extend([f'%{keyword}%', f'%{keyword}%', f'%{keyword}%'])
+    # teacher 角色强制限制：assigned_teacher 匹配用户姓名或用户名
+    if current_role == 'teacher' and (current_username or current_name):
+        conditions.append('(assigned_teacher = ? OR assigned_teacher = ? OR teacher = ? OR teacher = ?)')
+        params.extend([current_username, current_name, current_username, current_name])
 
     where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
     c.execute(f'SELECT * FROM students {where} ORDER BY id DESC', params)
@@ -300,6 +314,7 @@ def get_students():
             'evaluation': s['evaluation'], 'promised_class': s['promised_class'],
             'is_signed': s['is_signed'], 'reason': s['reason'], 'score': s['score'],
             'file_path': s['file_path'], 'remark': s['remark'],
+            'assigned_teacher': s['assigned_teacher'] if 'assigned_teacher' in s.keys() else '',
             'teacher': s['teacher'], 'createTime': s['createTime']
         })
     return jsonify(result)
@@ -335,6 +350,7 @@ def get_student(student_id):
         'evaluation': s['evaluation'], 'promised_class': s['promised_class'],
         'is_signed': s['is_signed'], 'reason': s['reason'], 'score': s['score'],
         'file_path': s['file_path'], 'remark': s['remark'],
+        'assigned_teacher': s['assigned_teacher'] if 'assigned_teacher' in s.keys() else '',
         'teacher': s['teacher'], 'createTime': s['createTime']
     })
 
@@ -355,7 +371,7 @@ def update_student(student_id):
             test_paper=?, test_location=?,
             math_score=?, english_score=?, total_score=?, evaluation=?,
             promised_class=?, is_signed=?, reason=?, score=?,
-            file_path=?, remark=?, teacher=?
+            file_path=?, remark=?, assigned_teacher=?, teacher=?
             WHERE id=?''', (
             data['name'], data.get('gender', ''), data['phone1'], data.get('phone2', ''),
             data.get('district', ''), data['school'], data.get('graduation_year', None),
@@ -371,7 +387,9 @@ def update_student(student_id):
             data.get('math_score', ''), data.get('english_score', ''), data.get('total_score', ''),
             data.get('evaluation', ''), data.get('promised_class', ''),
             data.get('is_signed', 0), data.get('reason', ''), data.get('score', ''),
-            data.get('file_path', ''), data.get('remark', ''), data['teacher'],
+            data.get('file_path', ''), data.get('remark', ''),
+            data.get('assigned_teacher', data['teacher']),  # 负责老师
+            data['teacher'],
             student_id
         ))
         conn.commit()
@@ -702,14 +720,17 @@ def batch_sign():
         success_count = 0
         for s in students:
             try:
+                # 负责老师：优先使用表格中的负责老师字段，其次为当前操作者
+                assigned = s.get('assigned_teacher') or s.get('teacher') or teacher
+                creator = teacher  # 导入操作者为当前登录用户
                 c.execute('''INSERT INTO students (
                     name, gender, phone1, phone2, district, school, graduation_year,
                     class_name, grade_total, rank_初一上, rank_初一下, rank_初二上,
                     rank_初二下, rank_初三上期中, rank_初三上期末, score_初三上期末,
                     score_一模, score_二模, test_paper, test_location, math_score,
                     english_score, total_score, evaluation, promised_class, is_signed,
-                    reason, score, file_path, remark, teacher, createTime
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    reason, score, file_path, remark, assigned_teacher, teacher, createTime
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
                     s.get('name', ''), s.get('gender', ''), s.get('phone1', ''), s.get('phone2', ''),
                     s.get('district', ''), s.get('school', ''), s.get('graduation_year'),
                     s.get('class_name', ''), s.get('grade_total'),
@@ -721,7 +742,7 @@ def batch_sign():
                     s.get('evaluation', ''), s.get('promised_class', ''),
                     s.get('is_signed', 0), s.get('reason', ''), s.get('score', ''),
                     s.get('file_path', ''), s.get('remark', ''),
-                    s.get('teacher') or teacher, create_time
+                    assigned, creator, create_time
                 ))
                 success_count += 1
             except Exception:
