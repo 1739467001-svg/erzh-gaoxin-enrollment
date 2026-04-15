@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>二中高新招生认定系统</title>
+    <title>学生认定系统</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -11,21 +11,31 @@
 <div class="container">
 
     <!-- ========== 登录页 ========== -->
-    <div id="loginPage" class="page login-page" style="background-image: url('/school_bg.webp');">
-        <div class="login-bg-mask"></div>
-        <div class="login-overlay">
-            <h1 class="login-title">二中高新招生认定系统</h1>
+    <div id="loginPage" class="page login-page">
+        <!-- 左侧：背景图区域 -->
+        <div class="login-bg-panel" style="background-image: url('/school_bg.png');">
+            <div class="login-bg-overlay"></div>
+            <div class="login-brand">
+                <div class="login-brand-icon">🏫</div>
+                <h1 class="login-brand-title">学生认定系统</h1>
+                <p class="login-brand-subtitle">高效、准确、便捷的学生认定管理平台</p>
+            </div>
+        </div>
+        <!-- 右侧：登录表单区域 -->
+        <div class="login-form-panel">
             <div class="login-box">
-                <h2>用户登录</h2>
+                <div class="login-logo">🏫</div>
+                <h2 class="login-form-title">学生认定系统</h2>
+                <p class="login-form-subtitle">请登录您的账号</p>
                 <div class="form-group">
                     <label>用户名</label>
-                    <input type="text" id="username" placeholder="请输入用户名">
+                    <input type="text" id="username" placeholder="请输入用户名" autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label>密码</label>
-                    <input type="password" id="password" placeholder="请输入密码">
+                    <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
                 </div>
-                <button class="btn btn-primary" onclick="login()">登录</button>
+                <button class="btn btn-primary login-btn" onclick="login()">登录</button>
                 <p id="loginError" class="error-message"></p>
             </div>
         </div>
@@ -34,7 +44,7 @@
     <!-- ========== 教师认定登记页 ========== -->
     <div id="registerPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统</h1>
+            <h1>学生认定系统</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('registerMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="registerMenu">
                 <span id="currentUser"></span>
@@ -91,7 +101,7 @@
     <!-- ========== 管理员主页 ========== -->
     <div id="adminPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统</h1>
+            <h1>学生认定系统</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('adminMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="adminMenu">
                 <span id="currentUserAdmin"></span>
@@ -185,7 +195,7 @@
     <!-- ========== 新增学生页 ========== -->
     <div id="addStudentPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 新增学生</h1>
+            <h1>学生认定系统 - 新增学生</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('addStudentMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="addStudentMenu">
                 <span id="currentUserAddStudent"></span>
@@ -288,7 +298,7 @@
     <!-- ========== 编辑学生页 ========== -->
     <div id="editPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 编辑学生信息</h1>
+            <h1>学生认定系统 - 编辑学生信息</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('editMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="editMenu">
                 <span id="currentUserEdit"></span>
@@ -392,7 +402,7 @@
     <!-- ========== 用户管理页 ========== -->
     <div id="userManagementPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 用户管理</h1>
+            <h1>学生认定系统 - 用户管理</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('userMgmtMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="userMgmtMenu">
                 <span id="currentUserUserManagement"></span>
@@ -433,7 +443,7 @@
     <!-- ========== 数据统计页 ========== -->
     <div id="statsPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 数据统计</h1>
+            <h1>学生认定系统 - 数据统计</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('statsMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="statsMenu">
                 <span id="currentUserStats"></span>
@@ -515,7 +525,7 @@
     <!-- ========== 操作日志页 ========== -->
     <div id="logsPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 操作日志</h1>
+            <h1>学生认定系统 - 操作日志</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('logsMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="logsMenu">
                 <span id="currentUserLogs"></span>
@@ -541,7 +551,7 @@
     <!-- ========== Excel导入认定审核页 ========== -->
     <div id="signContractPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 学生认定</h1>
+            <h1>学生认定系统 - 学生认定</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('signMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="signMenu">
                 <span id="currentUserSign"></span>
@@ -650,7 +660,7 @@
     <!-- ========== 试卷浏览页 ========== -->
     <div id="examPapersPage" class="page" style="display: none;">
         <div class="header">
-            <h1>二中高新招生认定系统 - 试卷浏览</h1>
+            <h1>学生认定系统 - 试卷浏览</h1>
             <button class="hamburger-btn" onclick="toggleMobileMenu('examMenu')" aria-label="菜单">&#9776;</button>
             <div class="header-right" id="examMenu">
                 <span id="currentUserExam"></span>
