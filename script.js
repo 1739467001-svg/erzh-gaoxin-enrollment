@@ -1113,6 +1113,12 @@ function resetSignPage() {
     document.getElementById('excelFileInput').value = '';
     document.getElementById('uploadStatus').style.display = 'none';
     document.getElementById('uploadZone').classList.remove('dragover');
+    // 重置提交按钮状态，防止多次上传时按钮卡在"提交中..."
+    const confirmBtn = document.getElementById('confirmSignBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '确认认定';
+    }
 }
 
 function setSignStep(n) {
@@ -1348,6 +1354,9 @@ async function confirmBatchSign() {
         const result = await res.json();
         if (result.success) {
             showToast('✓ ' + result.message, 'success');
+            // 成功后立即重置按钮，再跳转
+            btn.disabled = false;
+            btn.textContent = '确认认定';
             setTimeout(() => switchToAdmin(), 1200);
         } else {
             showToast('认定失败：' + result.message, 'error');
