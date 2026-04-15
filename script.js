@@ -268,6 +268,8 @@ function switchToAdmin() {
         if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
         if (btnExport) btnExport.style.display = 'inline-block';
         if (btnTemplate) btnTemplate.style.display = 'inline-block';
+        const btnExportAll = document.getElementById('btnExportAll');
+        if (btnExportAll) btnExportAll.style.display = isAdmin ? 'inline-block' : 'none';
     }
     loadStudents();
 }
@@ -1468,4 +1470,39 @@ function downloadPaper(filePath, title) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+// 超级管理员一键导出所有学生信息
+async function exportAllStudents() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast('权限不足，仅超级管理员可使用此功能', 'error');
+        return;
+    }
+    const btn = document.getElementById('btnExportAll');
+    if (btn) { btn.disabled = true; btn.textContent = '导出中...'; }
+    try {
+        const params = new URLSearchParams({ role: currentUser.role, username: currentUser.username });
+        const response = await fetch(`${API_BASE}/api/export-all-students?${params}`);
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ message: '导出失败' }));
+            showToast('导出失败：' + (err.message || response.statusText), 'error');
+            return;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const now = new Date();
+        const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        a.href = url;
+        a.download = `学生信息全量导出_${ts}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('导出成功！', 'success');
+    } catch (e) {
+        showToast('导出异常：' + e.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '一键导出全部'; }
+    }
 }
