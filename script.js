@@ -269,7 +269,7 @@ function switchToAdmin() {
         if (btnExport) btnExport.style.display = 'inline-block';
         if (btnTemplate) btnTemplate.style.display = 'inline-block';
         const btnExportAll = document.getElementById('btnExportAll');
-        if (btnExportAll) btnExportAll.style.display = isAdmin ? 'inline-block' : 'none';
+        if (btnExportAll) btnExportAll.style.display = 'inline-block';
     }
     loadStudents();
 }
@@ -1474,14 +1474,18 @@ function downloadPaper(filePath, title) {
 
 // 超级管理员一键导出所有学生信息
 async function exportAllStudents() {
-    if (!currentUser || currentUser.role !== 'admin') {
-        showToast('权限不足，仅超级管理员可使用此功能', 'error');
+    if (!currentUser || !['admin', 'manager', 'teacher'].includes(currentUser.role)) {
+        showToast('权限不足', 'error');
         return;
     }
     const btn = document.getElementById('btnExportAll');
     if (btn) { btn.disabled = true; btn.textContent = '导出中...'; }
     try {
-        const params = new URLSearchParams({ role: currentUser.role, username: currentUser.username });
+        const params = new URLSearchParams({
+            role: currentUser.role,
+            username: currentUser.username || '',
+            name: currentUser.name || ''
+        });
         const response = await fetch(`${API_BASE}/api/export-all-students?${params}`);
         if (!response.ok) {
             const err = await response.json().catch(() => ({ message: '导出失败' }));
@@ -1503,6 +1507,6 @@ async function exportAllStudents() {
     } catch (e) {
         showToast('导出异常：' + e.message, 'error');
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '一键导出全部'; }
+        if (btn) { btn.disabled = false; btn.textContent = '导出数据'; }
     }
 }

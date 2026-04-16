@@ -863,50 +863,57 @@ def generate_recognition_no():
 # ============================================================
 @app.route('/api/export-all-students', methods=['GET'])
 def export_all_students():
-    """超级管理员一键导出所有学生信息为 Excel"""
+    """导出学生信息为 Excel（所有角色均可，teacher只导出自己负责的学生）"""
     operator_role = request.args.get('role', '')
-    if operator_role not in ('admin', 'manager'):
+    operator_username = request.args.get('username', '')
+    operator_name = request.args.get('name', '')
+
+    if operator_role not in ('admin', 'manager', 'teacher'):
         return jsonify({'success': False, 'message': '权限不足'}), 403
 
     import io
     conn = get_db()
     with conn.cursor() as c:
-        c.execute('SELECT * FROM students ORDER BY id ASC')
+        if operator_role == 'teacher':
+            # teacher 只导出分配给自己的学生
+            c.execute(
+                'SELECT * FROM students WHERE assigned_teacher=%s OR assigned_teacher=%s OR teacher=%s OR teacher=%s ORDER BY id ASC',
+                (operator_username, operator_name, operator_username, operator_name)
+            )
+        else:
+            c.execute('SELECT * FROM students ORDER BY id ASC')
         students = c.fetchall()
     conn.close()
 
     rows = []
     for s in students:
         rows.append({
-            '学生姓名': s['name'],
-            '性别': s['gender'],
-            '联系电话1': s['phone1'],
-            '联系电话2': s['phone2'],
-            '行政区': s['district'],
-            '初中学校名称': s['school'],
-            '毕业年份': s['graduation_year'],
-            '班级': s['class_name'],
-            '年级总人数': s['grade_total'],
-            '八上期末年级排名': s['rank_初一上'],
-            '八下期末年级排名': s['rank_初一下'],
-            '九上期中年级排名': s['rank_初二上'],
-            '九上期末排名': s['rank_初二下'],
-            '九上期末分数': s['score_初三上期末'],
-            '一模成绩': s['score_一模'],
-            '二模成绩': s['score_二模'],
-            '测试试卷': s['test_paper'],
-            '测试地点': s['test_location'],
-            '数学': s['math_score'],
-            '英语': s['english_score'],
-            '总分': s['total_score'],
-            '评价等级': s['evaluation'],
-            '承诺班型': s['promised_class'],
+            '学生姓名': s.get('name', ''),
+            '性别': s.get('gender', ''),
+            '联系电话1': s.get('phone1', ''),
+            '联系电话2': s.get('phone2', ''),
+            '行政区': s.get('district', ''),
+            '初中学校名称': s.get('school', ''),
+            '毕业年份': s.get('graduation_year', ''),
+            '班级': s.get('class_name', ''),
+            '年级总人数': s.get('grade_total', ''),
+            '八上期末年级排名': s.get('rank_初一上', ''),
+            '八下期末年级排名': s.get('rank_初一下', ''),
+            '九上期中年级排名': s.get('rank_初二上', ''),
+            '九上期末排名': s.get('rank_初二下', ''),
+            '九上期末分数': s.get('score_初三上期末', ''),
+            '一模成绩': s.get('score_一模', ''),
+            '二模成绩': s.get('score_二模', ''),
+            '测试试卷': s.get('test_paper', ''),
+            '测试地点': s.get('test_location', ''),
+            '数学': s.get('math_score', ''),
+            '英语': s.get('english_score', ''),
+            '总分': s.get('total_score', ''),
+            '评价等级': s.get('evaluation', ''),
+            '承诺班型': s.get('promised_class', ''),
             '认定编号': s.get('recognition_no', ''),
-            '是否已认定': '是' if s['is_signed'] else '否',
+            '负责老师': s.get('assigned_teacher') or s.get('teacher', ''),
             '备注': s.get('remark', ''),
-            '负责老师': s.get('assigned_teacher') or s['teacher'],
-            '录入老师': s['teacher'],
-            '登记时间': s['createTime']
         })
 
     df = pd.DataFrame(rows)
