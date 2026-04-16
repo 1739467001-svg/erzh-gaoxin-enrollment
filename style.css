@@ -364,6 +364,67 @@ body {
     box-shadow: 0 4px 16px rgba(5,150,105,0.3);
 }
 
+/* ===== 操作按钮组：系统蓝色系渐进 ===== */
+/* 新增学生：深蓝（最深） */
+.btn-blue-1 {
+    background: linear-gradient(135deg, #0f2b5e 0%, #1e5fbb 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(15,43,94,0.3);
+}
+.btn-blue-1::after {
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+}
+.btn-blue-1:hover {
+    background: linear-gradient(135deg, #0a1f47 0%, #1a4fa0 100%);
+    box-shadow: 0 4px 12px rgba(15,43,94,0.4);
+}
+
+/* 导入数据：品牌蓝（中深） */
+.btn-blue-2 {
+    background: linear-gradient(135deg, #1e5fbb 0%, #3b82f6 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(30,95,187,0.3);
+}
+.btn-blue-2::after {
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+}
+.btn-blue-2:hover {
+    background: linear-gradient(135deg, #1a4fa0 0%, #2a6fd6 100%);
+    box-shadow: 0 4px 12px rgba(30,95,187,0.4);
+}
+
+/* 导出数据：活力蓝（中亮） */
+.btn-blue-3 {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+}
+.btn-blue-3::after {
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+}
+.btn-blue-3:hover {
+    background: linear-gradient(135deg, #2a6fd6 0%, #4a90e8 100%);
+    box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+}
+
+/* 下载模板：浅蓝（最浅） */
+.btn-blue-4 {
+    background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(96,165,250,0.3);
+}
+.btn-blue-4::after {
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+}
+.btn-blue-4:hover {
+    background: linear-gradient(135deg, #4a90e8 0%, #7ab8f8 100%);
+    box-shadow: 0 4px 12px rgba(96,165,250,0.4);
+}
+
 .btn-warning {
     background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
     color: #fff;
@@ -1289,7 +1350,7 @@ tbody tr:hover td:last-child {
         position: relative; z-index: 3;
         overflow-y: auto;
     }
-    .login-logo { display: block; }
+    .login-logo { display: none; }  /* 手机端隐藏登录表单区图标，避免与背景图重复 */
     .login-form-title { font-size: 18px; }
     .login-box { padding: 0; width: 100%; max-width: 100%; }
     .login-box .form-group input { height: 42px; }
@@ -1417,7 +1478,7 @@ tbody tr:hover td:last-child {
 @media (max-width: 480px) {
     .login-bg-panel { height: 38vh; min-height: 180px; }
     .login-brand-title { font-size: 18px; letter-spacing: 1px; }
-    .login-brand-subtitle { display: none; }
+    .login-brand-subtitle { display: block; font-size: 11px; }  /* 小屏恢复显示副标题 */
     .login-form-panel { padding: 20px 16px; }
     .login-form-title { font-size: 16px; }
     .login-form-subtitle { font-size: 12px; margin-bottom: 18px; }
