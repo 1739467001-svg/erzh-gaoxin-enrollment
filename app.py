@@ -682,8 +682,6 @@ def preview_excel():
                 'rank_初一下': safe_num(row.get('八下期末年级排名')),
                 'rank_初二上': safe_num(row.get('九上期中年级排名')),
                 'rank_初二下': safe_num(row.get('九上期末排名')),
-                'rank_初三上期中': None,
-                'rank_初三上期末': None,
                 'score_初三上期末': safe(row.get('九上期末分数', '')),
                 'score_一模': safe(row.get('一模成绩', '')),
                 'score_二模': safe(row.get('二模成绩', '')),
@@ -942,6 +940,7 @@ def export_all_students():
 # ============================================================
 @app.route('/api/import-excel', methods=['POST'])
 def import_excel():
+    """旧版直接导入接口（向后兼容），严格按模板26列解析"""
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part'})
     file = request.files['file']
@@ -949,36 +948,46 @@ def import_excel():
         return jsonify({'success': False, 'message': 'No selected file'})
     if file:
         try:
-            df = pd.read_excel(file)
+            df = pd.read_excel(file, dtype=str)
+            df = df[df['学生姓名'].notna() & (df['学生姓名'].astype(str).str.strip() != '') & (df['学生姓名'].astype(str).str.strip() != 'nan')]
             conn = get_db()
             count = 0
             with conn.cursor() as c:
-                for index, row in df.iterrows():
+                for _, row in df.iterrows():
+                    def safe(val, default=''):
+                        if pd.isna(val): return default
+                        s = str(val).strip()
+                        return default if s == 'nan' else s
+                    def safe_num(val):
+                        if pd.isna(val): return None
+                        try:
+                            v = float(val)
+                            return int(v) if v == int(v) else v
+                        except Exception: return None
+                    recognition_no = safe(row.get('认定编号', ''))
                     create_time = beijing_now()
                     c.execute('''INSERT INTO students (
                         name, gender, phone1, phone2, district, school, graduation_year,
                         class_name, grade_total, rank_初一上, rank_初一下, rank_初二上,
-                        rank_初二下, rank_初三上期中, rank_初三上期末, score_初三上期末,
-                        score_一模, score_二模, test_paper, test_location, math_score,
-                        english_score, total_score, evaluation, promised_class, is_signed,
-                        reason, score, file_path, remark, teacher, createTime
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (
-                        row.get('学生姓名', ''), row.get('性别', ''),
-                        row.get('联系电话1', ''), row.get('联系电话2', ''),
-                        row.get('行政区', ''), row.get('初中学校名称', ''),
-                        row.get('毕业年份', None), row.get('班级', ''),
-                        row.get('年级总人数', None),
-                        row.get('八上期末年级排名', None), row.get('八下期末年级排名', None),
-                        row.get('九上期中年级排名', None), row.get('九上期末排名', None),
-                        None, None,
-                        row.get('九上期末分数', ''), row.get('一模成绩', ''), row.get('二模成绩', ''),
-                        row.get('测试试卷', ''), row.get('测试地点', ''),
-                        row.get('数学', ''), row.get('英语', ''), row.get('总分', ''),
-                        row.get('评价等级', ''), row.get('承诺班型', ''),
-                        1 if row.get('是否已签约', '否') == '是' else 0,
-                        row.get('认定理由', ''), row.get('成绩', ''),
-                        row.get('文件路径', ''), row.get('备注', ''),
-                        row.get('负责老师', ''), create_time
+                        rank_初二下, score_初三上期末, score_一模, score_二模,
+                        test_paper, test_location, math_score, english_score, total_score,
+                        evaluation, promised_class, recognition_no, is_signed,
+                        remark, assigned_teacher, teacher, createTime
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', (
+                        safe(row.get('学生姓名', '')), safe(row.get('性别', '')),
+                        safe(row.get('联系电话1', '')), safe(row.get('联系电话2', '')),
+                        safe(row.get('行政区', '')), safe(row.get('初中学校名称', '')),
+                        safe_num(row.get('毕业年份')), safe(row.get('班级', '')),
+                        safe_num(row.get('年级总人数')),
+                        safe_num(row.get('八上期末年级排名')), safe_num(row.get('八下期末年级排名')),
+                        safe_num(row.get('九上期中年级排名')), safe_num(row.get('九上期末排名')),
+                        safe(row.get('九上期末分数', '')), safe(row.get('一模成绩', '')), safe(row.get('二模成绩', '')),
+                        safe(row.get('测试试卷', '')), safe(row.get('测试地点', '')),
+                        safe(row.get('数学', '')), safe(row.get('英语', '')), safe(row.get('总分', '')),
+                        safe(row.get('评价等级', '')), safe(row.get('承诺班型', '')),
+                        recognition_no, 1 if recognition_no else 0,
+                        safe(row.get('备注', '')),
+                        safe(row.get('负责老师', '')), safe(row.get('负责老师', '')), create_time
                     ))
                     count += 1
             conn.commit()

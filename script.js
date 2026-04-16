@@ -67,8 +67,6 @@ function closeAllMobileMenus() {
     });
 }
 
-// (移动菜单关闭逻辑已合并到下方的document click监听器中)
-
 // ============================================================
 // 学校数据（来源：杭州初中学校Excel）
 // ============================================================
@@ -86,7 +84,6 @@ const ALL_SCHOOLS = [...Object.values(SCHOOL_DATA).flat(), '其他'];
 // ============================================================
 // 学校 Autocomplete
 // ============================================================
-// prefix: 'reg' | 'add' | 'edit'
 function onSchoolInput(prefix) {
     const inputId = prefix === 'reg' ? 'school' : (prefix + 'School');
     const dropdownId = prefix + 'SchoolDropdown';
@@ -95,7 +92,6 @@ function onSchoolInput(prefix) {
     if (!input || !dropdown) return;
 
     const keyword = input.value.trim();
-    // 根据当前行政区过滤
     const districtId = prefix === 'reg' ? 'regDistrict' : (prefix + 'District');
     const districtEl = document.getElementById(districtId);
     const district = districtEl ? districtEl.value : '';
@@ -138,7 +134,6 @@ function selectSchool(prefix, name) {
 }
 
 function onDistrictChange(prefix) {
-    // 行政区变化时清空学校输入并重新过滤
     const inputId = prefix === 'reg' ? 'school' : (prefix + 'School');
     const input = document.getElementById(inputId);
     if (input) input.value = '';
@@ -147,13 +142,11 @@ function onDistrictChange(prefix) {
 
 // 点击其他地方关闭下拉 + 关闭移动菜单
 document.addEventListener('click', function(e) {
-    // 关闭学校autocomplete下拉
     document.querySelectorAll('.school-dropdown.show').forEach(dd => {
         if (!dd.closest('.school-autocomplete-wrap').contains(e.target)) {
             dd.classList.remove('show');
         }
     });
-    // 关闭移动端汉堡菜单（点击header外部时）
     if (!e.target.closest('.header')) {
         document.querySelectorAll('.header-right.mobile-open').forEach(m => {
             m.classList.remove('mobile-open');
@@ -210,8 +203,6 @@ function logout() {
 }
 
 function showMainPage() {
-    // 所有角色登录后都进入学生管理页（adminPage）
-    // teacher 登录后也直接进入学生管理，但只能看到自己的学生
     switchToAdmin();
 }
 
@@ -219,7 +210,6 @@ function showMainPage() {
 // 页面切换
 // ============================================================
 function showPage(pageId) {
-    // 切换页面时关闭所有移动端菜单
     closeAllMobileMenus();
     document.querySelectorAll('.page').forEach(p => {
         p.style.display = 'none';
@@ -228,7 +218,6 @@ function showPage(pageId) {
     const el = document.getElementById(pageId);
     el.style.visibility = 'visible';
     el.style.display = (pageId === 'loginPage') ? 'flex' : 'block';
-    // 数据一致性：跟踪当前活跃页面并启动自动刷新
     _currentActivePage = pageId;
     if (pageId === 'loginPage') {
         stopAutoRefresh();
@@ -240,7 +229,6 @@ function showPage(pageId) {
 function switchToRegister() {
     showPage('registerPage');
     document.getElementById('currentUser').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    // 管理员及以上才显示“学生管理”按钮
     document.getElementById('adminBtn').style.display = (currentUser.role !== 'teacher') ? 'inline-block' : 'none';
 }
 
@@ -250,27 +238,19 @@ function switchToAdmin() {
     const isAdmin = currentUser.role === 'admin';
     const isManager = currentUser.role === 'admin' || currentUser.role === 'manager';
     const isTeacher = currentUser.role === 'teacher';
-    // 导航按钮权限
     document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
     document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
     document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    // 右上角"新增认定"按钮：管理员、超级管理员、认定老师均可见
     const navSignBtn = document.getElementById('navSignBtn');
     if (navSignBtn) navSignBtn.style.display = (isManager || isTeacher) ? 'inline-block' : 'none';
-    // 工具栏按钮权限：认定老师也可以新增学生和新增认定
-    const adminToolbar = document.getElementById('adminToolbar');
-    if (adminToolbar) {
-        const btnNewStudent = document.getElementById('btnNewStudent');
-        const btnImportSign = document.getElementById('btnImportSign');
-        const btnExport = document.getElementById('btnExport');
-        const btnTemplate = document.getElementById('btnTemplate');
-        if (btnNewStudent) btnNewStudent.style.display = 'inline-block';
-        if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
-        if (btnExport) btnExport.style.display = 'inline-block';
-        if (btnTemplate) btnTemplate.style.display = 'inline-block';
-        const btnExportAll = document.getElementById('btnExportAll');
-        if (btnExportAll) btnExportAll.style.display = 'inline-block';
-    }
+    const btnNewStudent = document.getElementById('btnNewStudent');
+    const btnImportSign = document.getElementById('btnImportSign');
+    const btnExportAll = document.getElementById('btnExportAll');
+    const btnTemplate = document.getElementById('btnTemplate');
+    if (btnNewStudent) btnNewStudent.style.display = 'inline-block';
+    if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
+    if (btnExportAll) btnExportAll.style.display = 'inline-block';
+    if (btnTemplate) btnTemplate.style.display = 'inline-block';
     loadStudents();
 }
 
@@ -295,14 +275,12 @@ function switchToSignContract() {
 function switchToExamPapers() {
     showPage('examPapersPage');
     document.getElementById('currentUserExam').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    // 试卷上传仅超级管理员（admin）可见
     const canUpload = currentUser && currentUser.role === 'admin';
     document.getElementById('uploadPaperCard').style.display = canUpload ? 'block' : 'none';
     loadExamPapers();
 }
 
 function backFromExamPapers() {
-    // 所有角色返回学生管理页
     switchToAdmin();
 }
 
@@ -323,16 +301,10 @@ function roleLabel(role) {
     return map[role] || role;
 }
 
-/**
- * 判断当前用户是否可以编辑/删除某个学生
- * - 超级管理员和管理员：可操作所有学生
- * - 认定老师：只能操作自己登记的学生
- */
 function canEditDelete(student) {
     if (!currentUser) return false;
     if (currentUser.role === 'admin' || currentUser.role === 'manager') return true;
     if (currentUser.role === 'teacher') {
-        // 负责老师或录入者匹配当前用户时可编辑
         return student.assigned_teacher === currentUser.name ||
                student.assigned_teacher === currentUser.username ||
                student.teacher === currentUser.name;
@@ -363,27 +335,14 @@ async function submitChangePassword() {
     const errEl = document.getElementById('changePwdError');
     errEl.textContent = '';
 
-    if (!oldPwd || !newPwd || !confirmPwd) {
-        errEl.textContent = '请填写所有密码字段';
-        return;
-    }
-    if (newPwd.length < 6) {
-        errEl.textContent = '新密码至少需要6位';
-        return;
-    }
-    if (newPwd !== confirmPwd) {
-        errEl.textContent = '两次输入的新密码不一致';
-        return;
-    }
+    if (!oldPwd || !newPwd || !confirmPwd) { errEl.textContent = '请填写所有密码字段'; return; }
+    if (newPwd.length < 6) { errEl.textContent = '新密码至少需要6位'; return; }
+    if (newPwd !== confirmPwd) { errEl.textContent = '两次输入的新密码不一致'; return; }
     try {
         const res = await fetch(`${API_BASE}/api/users/change-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: currentUser.username,
-                old_password: oldPwd,
-                new_password: newPwd
-            })
+            body: JSON.stringify({ username: currentUser.username, old_password: oldPwd, new_password: newPwd })
         });
         const result = await res.json();
         if (result.success) {
@@ -404,33 +363,15 @@ async function loadStatistics() {
     try {
         const res = await fetch(`${API_BASE}/api/statistics`);
         const data = await res.json();
-
-        // 概览卡片
         document.getElementById('statTotal').textContent = data.total;
         document.getElementById('statSigned').textContent = data.signed;
         document.getElementById('statUnsigned').textContent = data.unsigned;
         document.getElementById('statRate').textContent = data.sign_rate + '%';
-
-        // 近7天趋势
         renderTrendChart(data.daily_trend);
-
-        // 各行政区
         renderBarChart('districtChart', data.by_district.map(d => ({ label: d.district, value: d.count })));
-
-        // 各老师认定
-        renderBarChart('teacherChart', data.by_teacher.map(t => ({
-            label: t.teacher,
-            value: t.total,
-            extra: `已签 ${t.signed}`
-        })));
-
-        // 承诺班型
+        renderBarChart('teacherChart', data.by_teacher.map(t => ({ label: t.teacher, value: t.total, extra: `已签 ${t.signed}` })));
         renderBarChart('classChart', data.by_class.map(c => ({ label: c.class, value: c.count })));
-
-        // 来源学校
         renderBarChart('schoolChart', data.by_school.map(s => ({ label: s.school, value: s.count })));
-
-        // 系统概况
         const overviewData = [
             { label: '学生总数', value: data.total },
             { label: '已认定', value: data.signed },
@@ -438,7 +379,6 @@ async function loadStatistics() {
             { label: '试卷数量', value: data.paper_total }
         ];
         renderBarChart('overviewChart', overviewData, 'green');
-
     } catch (e) {
         console.error('加载统计数据失败', e);
     }
@@ -453,13 +393,12 @@ function renderTrendChart(trend) {
     const maxVal = Math.max(...trend.map(d => d.count), 1);
     container.innerHTML = trend.map(d => {
         const pct = Math.round((d.count / maxVal) * 100);
-        const label = d.day ? d.day.slice(5) : ''; // 显示 MM-DD
-        return `
-            <div class="trend-bar-wrap">
-                <div class="trend-bar-num">${d.count}</div>
-                <div class="trend-bar" style="height:${Math.max(pct, 4)}%"></div>
-                <div class="trend-bar-label">${label}</div>
-            </div>`;
+        const label = d.day ? d.day.slice(5) : '';
+        return `<div class="trend-bar-wrap">
+            <div class="trend-bar-num">${d.count}</div>
+            <div class="trend-bar" style="height:${Math.max(pct, 4)}%"></div>
+            <div class="trend-bar-label">${label}</div>
+        </div>`;
     }).join('');
 }
 
@@ -473,14 +412,11 @@ function renderBarChart(containerId, items, colorClass = '') {
     container.innerHTML = items.map(item => {
         const pct = Math.round((item.value / maxVal) * 100);
         const extra = item.extra ? `<span style="color:#888;font-size:11px;margin-left:4px;">(${item.extra})</span>` : '';
-        return `
-            <li class="chart-bar-item">
-                <span class="chart-bar-label" title="${item.label}">${item.label}</span>
-                <div class="chart-bar-track">
-                    <div class="chart-bar-fill ${colorClass}" style="width:${pct}%"></div>
-                </div>
-                <span class="chart-bar-val">${item.value}${extra}</span>
-            </li>`;
+        return `<li class="chart-bar-item">
+            <span class="chart-bar-label" title="${item.label}">${item.label}</span>
+            <div class="chart-bar-track"><div class="chart-bar-fill ${colorClass}" style="width:${pct}%"></div></div>
+            <span class="chart-bar-val">${item.value}${extra}</span>
+        </li>`;
     }).join('');
 }
 
@@ -528,7 +464,6 @@ function getLogBadgeClass(action) {
 // ============================================================
 async function loadStudents() {
     try {
-        // 构建请求 URL，teacher 角色将 role/username/name 传给后端，由后端按 assigned_teacher 过滤
         let url = `${API_BASE}/api/students`;
         if (currentUser && currentUser.role === 'teacher') {
             const params = new URLSearchParams({
@@ -600,57 +535,66 @@ function updateFilterActiveTag() {
     }
 }
 
+// ============================================================
+// 学生列表渲染 —— 严格按模板26列 + 登记时间 + 操作
+// 列顺序：序号 | 学生姓名 | 性别 | 联系电话1 | 联系电话2 | 行政区 |
+//         初中学校名称 | 毕业年份 | 班级 | 年级总人数 |
+//         八上期末年级排名 | 八下期末年级排名 | 九上期中年级排名 | 九上期末排名 |
+//         九上期末分数 | 一模成绩 | 二模成绩 |
+//         测试试卷 | 测试地点 | 数学 | 英语 | 总分 | 评价等级 |
+//         承诺班型 | 认定编号 | 负责老师 | 备注 | 登记时间 | 操作
+// ============================================================
 function renderStudentTable(students) {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="32" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="29" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
         return;
     }
 
-    // 辅助函数：截断長文本并添加 title 提示
-    const truncateText = (text, maxLen = 20) => {
+    const truncate = (text, maxLen = 20) => {
         if (!text) return '';
         const str = String(text);
-        if (str.length > maxLen) {
-            return `<span title="${str}">${str.substring(0, maxLen)}...</span>`;
-        }
+        if (str.length > maxLen) return `<span title="${str}">${str.substring(0, maxLen)}...</span>`;
         return str;
     };
 
-	    students.forEach((s, idx) => {
-	        const tr = document.createElement('tr');
-	        tr.innerHTML = `
-	            <td>${idx + 1}</td>
-	            <td>${s.name || ''}</td>
-	            <td>${s.gender || ''}</td>
-	            <td>${s.phone1 || ''}</td>
-	            <td>${s.phone2 || ''}</td>
-	            <td>${s.district || ''}</td>
-	            <td>${truncateText(s.school, 25)}</td>
-	            <td>${s.graduation_year || ''}</td>
-	            <td>${s.class_name || ''}</td>
-	            <td>${s.grade_total || ''}</td>
-	            <td>${s['rank_初一上'] || ''}</td>
-	            <td>${s['rank_初一下'] || ''}</td>
-	            <td>${s['rank_初二上'] || ''}</td>
-	            <td>${s['rank_初二下'] || ''}</td>
-	            <td>${s['score_初三上期末'] || ''}</td>
-	            <td>${s['score_一模'] || ''}</td>
-	            <td>${s['score_二模'] || ''}</td>
-	            <td>${s.test_paper || ''}</td>
-	            <td>${s.test_location || ''}</td>
-	            <td>${s.math_score || ''}</td>
-	            <td>${s.english_score || ''}</td>
-	            <td>${s.total_score || ''}</td>
-	            <td>${s.evaluation || ''}</td>
-	            <td>${s.promised_class || ''}</td>
-	            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
-	            <td>${s.file_path ? `<a href="${API_BASE}/uploads/${s.file_path}" target="_blank" class="file-link">查看</a>` : '无'}</td>
-	            <td>${truncateText(s.remark, 18)}</td>
+    students.forEach((s, idx) => {
+        const tr = document.createElement('tr');
+        const recognitionNo = s.recognition_no || '';
+        const isSignedBadge = recognitionNo
+            ? `<span class="badge badge-success">已认定</span>`
+            : (s.is_signed ? `<span class="badge badge-success">已认定</span>` : `<span class="badge badge-secondary">未认定</span>`);
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${s.name || ''}</td>
+            <td>${s.gender || ''}</td>
+            <td>${s.phone1 || ''}</td>
+            <td>${s.phone2 || ''}</td>
+            <td>${s.district || ''}</td>
+            <td>${truncate(s.school, 25)}</td>
+            <td>${s.graduation_year || ''}</td>
+            <td>${s.class_name || ''}</td>
+            <td>${s.grade_total || ''}</td>
+            <td>${s['rank_初一上'] || ''}</td>
+            <td>${s['rank_初一下'] || ''}</td>
+            <td>${s['rank_初二上'] || ''}</td>
+            <td>${s['rank_初二下'] || ''}</td>
+            <td>${s['score_初三上期末'] || ''}</td>
+            <td>${s['score_一模'] || ''}</td>
+            <td>${s['score_二模'] || ''}</td>
+            <td>${s.test_paper || ''}</td>
+            <td>${s.test_location || ''}</td>
+            <td>${s.math_score || ''}</td>
+            <td>${s.english_score || ''}</td>
+            <td>${s.total_score || ''}</td>
+            <td>${s.evaluation || ''}</td>
+            <td>${s.promised_class || ''}</td>
+            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
             <td>${s.assigned_teacher || s.teacher || ''}</td>
+            <td>${truncate(s.remark, 18)}</td>
             <td>${s.createTime || ''}</td>
-	            <td>
+            <td>
                 ${canEditDelete(s) ? `<button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>` : ''}
                 ${canEditDelete(s) ? `<button class="btn-table btn-delete" onclick="deleteStudent(${s.id})">删除</button>` : ''}
             </td>
@@ -673,7 +617,11 @@ function applyFilters() {
             (s.school || '').toLowerCase().includes(keyword) ||
             (s.phone1 || '').includes(keyword)
         )) return false;
-        if (signed !== '' && String(s.is_signed) !== signed) return false;
+        if (signed !== '') {
+            const isSigned = !!(s.recognition_no || s.is_signed);
+            if (signed === '1' && !isSigned) return false;
+            if (signed === '0' && isSigned) return false;
+        }
         if (district && (s.district || '') !== district) return false;
         if (teacher  && (s.assigned_teacher || s.teacher || '') !== teacher)  return false;
         if (cls      && (s.promised_class || '') !== cls) return false;
@@ -698,21 +646,15 @@ function clearFilters() {
     renderStudentTable(allStudents);
 }
 
+// ============================================================
 // 新增学生表单提交
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     const addForm = document.getElementById('addStudentForm');
     if (addForm) {
         addForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const fileInput = document.getElementById('addFile');
-            let filePath = '';
-            if (fileInput.files[0]) {
-                const fd = new FormData();
-                fd.append('file', fileInput.files[0]);
-                const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) filePath = uploadData.file_path;
-            }
+            const recognitionNo = document.getElementById('addRecognition_no').value.trim();
             const data = {
                 name: document.getElementById('addStudentName').value,
                 gender: document.getElementById('addGender').value,
@@ -723,11 +665,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 graduation_year: document.getElementById('addGraduation_year').value || null,
                 class_name: document.getElementById('addClass_name').value,
                 grade_total: document.getElementById('addGrade_total').value || null,
-                'rank_初一上': document.getElementById('addRank_初二上').value || null,
-                'rank_初一下': document.getElementById('addRank_初二下').value || null,
-                'rank_初二上': document.getElementById('addRank_初三上期中').value || null,
-                'rank_初二下': document.getElementById('addRank_初三上期末').value || null,
-                'score_初三上期末': document.getElementById('addScore_初三上期末').value,
+                'rank_初一上': document.getElementById('addRank_八上').value || null,
+                'rank_初一下': document.getElementById('addRank_八下').value || null,
+                'rank_初二上': document.getElementById('addRank_九上期中').value || null,
+                'rank_初二下': document.getElementById('addRank_九上期末').value || null,
+                'score_初三上期末': document.getElementById('addScore_九上期末').value,
                 'score_一模': document.getElementById('addScore_一模').value,
                 'score_二模': document.getElementById('addScore_二模').value,
                 test_paper: document.getElementById('addTest_paper').value,
@@ -737,10 +679,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 total_score: document.getElementById('addTotal_score').value,
                 evaluation: document.getElementById('addEvaluation').value,
                 promised_class: document.getElementById('addPromised_class').value,
-                is_signed: parseInt(document.getElementById('addIs_signed').value),
-                reason: document.getElementById('addReason').value,
-                score: document.getElementById('addScore').value,
-                file_path: filePath,
+                recognition_no: recognitionNo,
+                is_signed: recognitionNo ? 1 : 0,
+                assigned_teacher: document.getElementById('addAssigned_teacher').value,
                 remark: document.getElementById('addRemark').value,
                 teacher: currentUser.name
             };
@@ -759,45 +700,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 教师登记表单
+    // 教师认定登记表单（简化版）
     const studentForm = document.getElementById('studentForm');
     if (studentForm) {
         studentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const fileInput = document.getElementById('file');
-            let filePath = '';
-            if (fileInput.files[0]) {
-                const fd = new FormData();
-                fd.append('file', fileInput.files[0]);
-                const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) filePath = uploadData.file_path;
-            }
-            // 前端验证新增必填字段
-            const promisedClass = document.getElementById('regPromisedClass').value;
-            const isSigned = document.getElementById('regIsSigned').value;
             const district = document.getElementById('regDistrict').value;
-            if (!promisedClass) {
-                showToast('请选择认定班型', 'error');
-                return;
-            }
-            if (!district) {
-                showToast('请选择行政区', 'error');
-                return;
-            }
+            const promisedClass = document.getElementById('regPromisedClass').value;
+            if (!promisedClass) { showToast('请选择认定班型', 'error'); return; }
+            if (!district) { showToast('请选择行政区', 'error'); return; }
             const data = {
                 name: document.getElementById('studentName').value,
-                school: document.getElementById('school').value,
-                district: district,
+                gender: document.getElementById('regGender').value,
                 phone1: document.getElementById('phone1').value,
                 phone2: document.getElementById('phone2').value,
-                reason: document.getElementById('reason').value,
-                score: document.getElementById('score').value,
+                district: district,
+                school: document.getElementById('school').value,
+                graduation_year: document.getElementById('regGraduation_year').value || null,
+                class_name: document.getElementById('regClass_name').value,
+                grade_total: document.getElementById('regGrade_total').value || null,
                 promised_class: promisedClass,
-                is_signed: parseInt(isSigned),
-                file_path: filePath,
                 remark: document.getElementById('remark').value,
-                teacher: currentUser.name
+                teacher: currentUser.name,
+                assigned_teacher: currentUser.name
             };
             const res = await fetch(`${API_BASE}/api/students`, {
                 method: 'POST',
@@ -820,15 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('editId').value;
-            const fileInput = document.getElementById('editFile');
-            let filePath = document.getElementById('currentFile').dataset.path || '';
-            if (fileInput.files[0]) {
-                const fd = new FormData();
-                fd.append('file', fileInput.files[0]);
-                const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) filePath = uploadData.file_path;
-            }
+            const recognitionNo = document.getElementById('editRecognition_no').value.trim();
             const data = {
                 name: document.getElementById('editStudentName').value,
                 gender: document.getElementById('editGender').value,
@@ -839,11 +756,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 graduation_year: document.getElementById('editGraduation_year').value || null,
                 class_name: document.getElementById('editClass_name').value,
                 grade_total: document.getElementById('editGrade_total').value || null,
-                'rank_初一上': document.getElementById('editRank_初二上').value || null,
-                'rank_初一下': document.getElementById('editRank_初二下').value || null,
-                'rank_初二上': document.getElementById('editRank_初三上期中').value || null,
-                'rank_初二下': document.getElementById('editRank_初三上期末').value || null,
-                'score_初三上期末': document.getElementById('editScore_初三上期末').value,
+                'rank_初一上': document.getElementById('editRank_八上').value || null,
+                'rank_初一下': document.getElementById('editRank_八下').value || null,
+                'rank_初二上': document.getElementById('editRank_九上期中').value || null,
+                'rank_初二下': document.getElementById('editRank_九上期末').value || null,
+                'score_初三上期末': document.getElementById('editScore_九上期末').value,
                 'score_一模': document.getElementById('editScore_一模').value,
                 'score_二模': document.getElementById('editScore_二模').value,
                 test_paper: document.getElementById('editTest_paper').value,
@@ -853,10 +770,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 total_score: document.getElementById('editTotal_score').value,
                 evaluation: document.getElementById('editEvaluation').value,
                 promised_class: document.getElementById('editPromised_class').value,
-                is_signed: parseInt(document.getElementById('editIs_signed').value),
-                reason: document.getElementById('editReason').value,
-                score: document.getElementById('editScore').value,
-                file_path: filePath,
+                recognition_no: recognitionNo,
+                is_signed: recognitionNo ? 1 : 0,
+                assigned_teacher: document.getElementById('editAssigned_teacher').value,
                 remark: document.getElementById('editRemark').value,
                 teacher: currentUser.name
             };
@@ -907,8 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hideUserForm();
                 loadUsers();
             } else {
-                showToast('操作失败：' + result.
-message, 'error');
+                showToast('操作失败：' + result.message, 'error');
             }
         });
     }
@@ -968,11 +883,11 @@ async function editStudent(id) {
         document.getElementById('editGraduation_year').value = s.graduation_year || '';
         document.getElementById('editClass_name').value = s.class_name || '';
         document.getElementById('editGrade_total').value = s.grade_total || '';
-        document.getElementById('editRank_初二上').value = s['rank_初一上'] || '';
-        document.getElementById('editRank_初二下').value = s['rank_初一下'] || '';
-        document.getElementById('editRank_初三上期中').value = s['rank_初二上'] || '';
-        document.getElementById('editRank_初三上期末').value = s['rank_初二下'] || '';
-        document.getElementById('editScore_初三上期末').value = s['score_初三上期末'] || '';
+        document.getElementById('editRank_八上').value = s['rank_初一上'] || '';
+        document.getElementById('editRank_八下').value = s['rank_初一下'] || '';
+        document.getElementById('editRank_九上期中').value = s['rank_初二上'] || '';
+        document.getElementById('editRank_九上期末').value = s['rank_初二下'] || '';
+        document.getElementById('editScore_九上期末').value = s['score_初三上期末'] || '';
         document.getElementById('editScore_一模').value = s['score_一模'] || '';
         document.getElementById('editScore_二模').value = s['score_二模'] || '';
         document.getElementById('editTest_paper').value = s.test_paper || '';
@@ -982,13 +897,9 @@ async function editStudent(id) {
         document.getElementById('editTotal_score').value = s.total_score || '';
         document.getElementById('editEvaluation').value = s.evaluation || '';
         document.getElementById('editPromised_class').value = s.promised_class || '';
-        document.getElementById('editIs_signed').value = s.is_signed || 0;
-        document.getElementById('editReason').value = s.reason || '';
-        document.getElementById('editScore').value = s.score || '';
+        document.getElementById('editRecognition_no').value = s.recognition_no || '';
+        document.getElementById('editAssigned_teacher').value = s.assigned_teacher || s.teacher || '';
         document.getElementById('editRemark').value = s.remark || '';
-        const cf = document.getElementById('currentFile');
-        cf.dataset.path = s.file_path || '';
-        cf.textContent = s.file_path ? `当前文件：${s.file_path}` : '（无文件）';
     } catch (e) {
         showToast('加载学生数据失败', 'error');
     }
@@ -1083,17 +994,24 @@ async function deleteUser(id) {
 }
 
 // ============================================================
-// 导出 Excel
+// 导出 Excel —— 严格按模板26列输出
 // ============================================================
 function exportToExcel() {
-    const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
-        '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名','九上期末分数','一模成绩','二模成绩',
-        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型','是否已签约','备注','负责老师','登记时间'];
+    const headers = [
+        '学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
+        '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名',
+        '九上期末分数','一模成绩','二模成绩',
+        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
+        '认定编号','负责老师','备注'
+    ];
     const rows = allStudents.map(s => [
-        s.name, s.gender, s.phone1, s.phone2, s.district, s.school, s.graduation_year, s.class_name, s.grade_total,
-        s['rank_初一上'], s['rank_初一下'], s['rank_初二上'], s['rank_初二下'], s['score_初三上期末'], s['score_一模'], s['score_二模'],
-        s.test_paper, s.test_location, s.math_score, s.english_score, s.total_score, s.evaluation, s.promised_class,
-        s.is_signed ? '是' : '否', s.remark, s.teacher, s.createTime
+        s.name, s.gender, s.phone1, s.phone2, s.district, s.school,
+        s.graduation_year, s.class_name, s.grade_total,
+        s['rank_初一上'], s['rank_初一下'], s['rank_初二上'], s['rank_初二下'],
+        s['score_初三上期末'], s['score_一模'], s['score_二模'],
+        s.test_paper, s.test_location, s.math_score, s.english_score, s.total_score,
+        s.evaluation, s.promised_class,
+        s.recognition_no || '', s.assigned_teacher || s.teacher || '', s.remark || ''
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
@@ -1101,13 +1019,22 @@ function exportToExcel() {
     XLSX.writeFile(wb, `学生信息_${new Date().toLocaleDateString()}.xlsx`);
 }
 
+// ============================================================
+// 下载导入模板 —— 严格按模板26列
+// ============================================================
 function downloadExcelTemplate() {
-    const headers = ['学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
-        '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名','九上期末分数','一模成绩','二模成绩',
-        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型','是否已签约','负责老师'];
-    const example = ['张三','男','13800000001','13900000002','滨江区','某中学','2026','905','500',
+    const headers = [
+        '学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
+        '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名',
+        '九上期末分数','一模成绩','二模成绩',
+        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
+        '认定编号','负责老师','备注'
+    ];
+    const example = [
+        '张三','男','13800000001','13900000002','滨江区','长河中学','2025','905','500',
         '12','9','7','6','560','580','590','A卷','某园区','120','110','580','A','B',
-        '是','1234'];
+        'RD20250001','张老师','备注示例'
+    ];
     const ws = XLSX.utils.aoa_to_sheet([headers, example]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '学生信息模板');
@@ -1126,7 +1053,6 @@ function resetSignPage() {
     document.getElementById('excelFileInput').value = '';
     document.getElementById('uploadStatus').style.display = 'none';
     document.getElementById('uploadZone').classList.remove('dragover');
-    // 重置提交按钮状态，防止多次上传时按钮卡在"提交中..."
     const confirmBtn = document.getElementById('confirmSignBtn');
     if (confirmBtn) {
         confirmBtn.disabled = false;
@@ -1192,12 +1118,16 @@ function showSignStep2() {
     document.getElementById('signSummary').textContent = `共 ${signPreviewStudents.length} 条记录`;
 }
 
+// ============================================================
+// 导入预览表格渲染 —— 严格按模板26列
+// ============================================================
 function renderSignPreviewTable() {
     const tbody = document.getElementById('signPreviewBody');
     tbody.innerHTML = '';
     signPreviewStudents.forEach((s, idx) => {
         const tr = document.createElement('tr');
         tr.dataset.idx = idx;
+        const recognitionNo = s.recognition_no || '';
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td><span class="cell-val">${s.name || ''}</span></td>
@@ -1208,25 +1138,24 @@ function renderSignPreviewTable() {
             <td><span class="cell-val">${s.school || ''}</span></td>
             <td><span class="cell-val">${s.graduation_year || ''}</span></td>
             <td><span class="cell-val">${s.class_name || ''}</span></td>
-	            <td><span class="cell-val">${s.grade_total || ''}</span></td>
-	            <td><span class="cell-val">${s['rank_初一上'] || ''}</span></td>
-	            <td><span class="cell-val">${s['rank_初一下'] || ''}</span></td>
-	            <td><span class="cell-val">${s['rank_初二上'] || ''}</span></td>
-	            <td><span class="cell-val">${s['rank_初二下'] || ''}</span></td>
-	            <td><span class="cell-val">${s['score_初三上期末'] || ''}</span></td>
-	            <td><span class="cell-val">${s['score_一模'] || ''}</span></td>
-	            <td><span class="cell-val">${s['score_二模'] || ''}</span></td>
-	            <td><span class="cell-val">${s.test_paper || ''}</span></td>
+            <td><span class="cell-val">${s.grade_total || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初一上'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初一下'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初二上'] || ''}</span></td>
+            <td><span class="cell-val">${s['rank_初二下'] || ''}</span></td>
+            <td><span class="cell-val">${s['score_初三上期末'] || ''}</span></td>
+            <td><span class="cell-val">${s['score_一模'] || ''}</span></td>
+            <td><span class="cell-val">${s['score_二模'] || ''}</span></td>
+            <td><span class="cell-val">${s.test_paper || ''}</span></td>
             <td><span class="cell-val">${s.test_location || ''}</span></td>
             <td><span class="cell-val">${s.math_score || ''}</span></td>
             <td><span class="cell-val">${s.english_score || ''}</span></td>
             <td><span class="cell-val">${s.total_score || ''}</span></td>
             <td><span class="cell-val">${s.evaluation || ''}</span></td>
             <td><span class="cell-val">${s.promised_class || ''}</span></td>
-            <td><span class="badge ${s.is_signed ? 'badge-success' : 'badge-secondary'}">${s.is_signed ? '是' : '否'}</span></td>
-            <td><span class="cell-val">${s.reason || ''}</span></td>
-            <td><span class="cell-val">${s.remark || ''}</span></td>
+            <td><span class="cell-val">${recognitionNo}</span></td>
             <td><span class="cell-val">${s.assigned_teacher || s.teacher || ''}</span></td>
+            <td><span class="cell-val">${s.remark || ''}</span></td>
             <td>
                 <button class="btn-table btn-edit" onclick="openSignEditModal(${idx})">编辑</button>
                 <button class="btn-table btn-delete" onclick="removeSignRow(${idx})">移除</button>
@@ -1243,6 +1172,9 @@ function removeSignRow(idx) {
     document.getElementById('signSummary').textContent = `共 ${signPreviewStudents.length} 条记录`;
 }
 
+// ============================================================
+// 导入预览编辑模态框 —— 严格按模板26列
+// ============================================================
 function openSignEditModal(idx) {
     const s = signPreviewStudents[idx];
     document.getElementById('signEditIndex').value = idx;
@@ -1269,8 +1201,7 @@ function openSignEditModal(idx) {
     document.getElementById('signEditTotal').value = s.total_score || '';
     document.getElementById('signEditEval').value = s.evaluation || '';
     document.getElementById('signEditPromised').value = s.promised_class || '';
-    document.getElementById('signEditIsSigned').value = s.is_signed || 0;
-    document.getElementById('signEditReason').value = s.reason || '';
+    document.getElementById('signEditRecognitionNo').value = s.recognition_no || '';
     document.getElementById('signEditTeacher').value = s.assigned_teacher || s.teacher || '';
     document.getElementById('signEditRemark').value = s.remark || '';
     document.getElementById('signEditModal').style.display = 'flex';
@@ -1283,6 +1214,7 @@ function closeSignEditModal(event) {
 
 function saveSignEdit() {
     const idx = parseInt(document.getElementById('signEditIndex').value);
+    const recognitionNo = document.getElementById('signEditRecognitionNo').value.trim();
     signPreviewStudents[idx] = {
         name: document.getElementById('signEditName').value,
         gender: document.getElementById('signEditGender').value,
@@ -1307,13 +1239,11 @@ function saveSignEdit() {
         total_score: document.getElementById('signEditTotal').value,
         evaluation: document.getElementById('signEditEval').value,
         promised_class: document.getElementById('signEditPromised').value,
-        is_signed: parseInt(document.getElementById('signEditIsSigned').value),
-        reason: document.getElementById('signEditReason').value,
+        recognition_no: recognitionNo,
+        is_signed: recognitionNo ? 1 : 0,
         assigned_teacher: document.getElementById('signEditTeacher').value,
         teacher: document.getElementById('signEditTeacher').value,
-        remark: document.getElementById('signEditRemark').value,
-        score: document.getElementById('signEditTotal').value,
-        file_path: ''
+        remark: document.getElementById('signEditRemark').value
     };
     document.getElementById('signEditModal').style.display = 'none';
     renderSignPreviewTable();
@@ -1328,7 +1258,7 @@ function proceedToConfirm() {
     document.getElementById('signStep3').style.display = 'block';
     setSignStep(3);
 
-    const signedCount = signPreviewStudents.filter(s => s.is_signed).length;
+    const signedCount = signPreviewStudents.filter(s => s.recognition_no || s.is_signed).length;
     const summary = document.getElementById('confirmSummary');
     summary.innerHTML = `
         <div class="confirm-stat">
@@ -1368,7 +1298,6 @@ async function confirmBatchSign() {
         const result = await res.json();
         if (result.success) {
             showToast('✓ ' + result.message, 'success');
-            // 成功后立即重置按钮，再跳转
             btn.disabled = false;
             btn.textContent = '确认认定';
             setTimeout(() => switchToAdmin(), 1200);
@@ -1472,7 +1401,9 @@ function downloadPaper(filePath, title) {
     document.body.removeChild(a);
 }
 
-// 超级管理员一键导出所有学生信息
+// ============================================================
+// 超级管理员一键导出所有学生信息（后端生成，按模板26列）
+// ============================================================
 async function exportAllStudents() {
     if (!currentUser || !['admin', 'manager', 'teacher'].includes(currentUser.role)) {
         showToast('权限不足', 'error');
