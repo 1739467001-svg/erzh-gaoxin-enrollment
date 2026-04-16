@@ -1410,20 +1410,43 @@ async function exportAllStudents() {
         return;
     }
     const btn = document.getElementById('btnExportAll');
+    // 防止重复点击
+    if (btn && btn.disabled) return;
     if (btn) { btn.disabled = true; btn.textContent = '导出中...'; }
+
+    // 超时控制：60秒
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
     try {
         const params = new URLSearchParams({
             role: currentUser.role,
             username: currentUser.username || '',
             name: currentUser.name || ''
         });
-        const response = await fetch(`${API_BASE}/api/export-all-students?${params}`);
+        const response = await fetch(`${API_BASE}/api/export-all-students?${params}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
-            const err = await response.json().catch(() => ({ message: '导出失败' }));
-            showToast('导出失败：' + (err.message || response.statusText), 'error');
+            let errMsg = '导出失败';
+            try {
+                const err = await response.json();
+                errMsg = err.message || response.statusText;
+            } catch (_) {
+                errMsg = response.statusText || `HTTP ${response.status}`;
+            }
+            showToast('导出失败：' + errMsg, 'error');
             return;
         }
+
         const blob = await response.blob();
+        if (!blob || blob.size === 0) {
+            showToast('导出失败：文件内容为空', 'error');
+            return;
+        }
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         const now = new Date();
@@ -1433,10 +1456,15 @@ async function exportAllStudents() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         showToast('导出成功！', 'success');
     } catch (e) {
-        showToast('导出异常：' + e.message, 'error');
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') {
+            showToast('导出超时，请稍后重试', 'error');
+        } else {
+            showToast('导出异常：' + e.message, 'error');
+        }
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = '导出数据'; }
     }

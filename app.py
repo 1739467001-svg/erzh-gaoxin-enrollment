@@ -870,69 +870,88 @@ def export_all_students():
         return jsonify({'success': False, 'message': '权限不足'}), 403
 
     import io
-    conn = get_db()
-    with conn.cursor() as c:
-        if operator_role == 'teacher':
-            # teacher 只导出分配给自己的学生
-            c.execute(
-                'SELECT * FROM students WHERE assigned_teacher=%s OR assigned_teacher=%s OR teacher=%s OR teacher=%s ORDER BY id ASC',
-                (operator_username, operator_name, operator_username, operator_name)
-            )
-        else:
-            c.execute('SELECT * FROM students ORDER BY id ASC')
-        students = c.fetchall()
-    conn.close()
+    conn = None
+    try:
+        conn = get_db()
+        with conn.cursor() as c:
+            if operator_role == 'teacher':
+                # teacher 只导出分配给自己的学生
+                c.execute(
+                    'SELECT * FROM students WHERE assigned_teacher=%s OR assigned_teacher=%s OR teacher=%s OR teacher=%s ORDER BY id ASC',
+                    (operator_username, operator_name, operator_username, operator_name)
+                )
+            else:
+                c.execute('SELECT * FROM students ORDER BY id ASC')
+            students = c.fetchall()
+    except Exception as e:
+        if conn:
+            conn.close()
+        return jsonify({'success': False, 'message': f'数据库查询失败: {str(e)}'}), 500
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
-    rows = []
-    for s in students:
-        rows.append({
-            '学生姓名': s.get('name', ''),
-            '性别': s.get('gender', ''),
-            '联系电话1': s.get('phone1', ''),
-            '联系电话2': s.get('phone2', ''),
-            '行政区': s.get('district', ''),
-            '初中学校名称': s.get('school', ''),
-            '毕业年份': s.get('graduation_year', ''),
-            '班级': s.get('class_name', ''),
-            '年级总人数': s.get('grade_total', ''),
-            '八上期末年级排名': s.get('rank_初一上', ''),
-            '八下期末年级排名': s.get('rank_初一下', ''),
-            '九上期中年级排名': s.get('rank_初二上', ''),
-            '九上期末排名': s.get('rank_初二下', ''),
-            '九上期末分数': s.get('score_初三上期末', ''),
-            '一模成绩': s.get('score_一模', ''),
-            '二模成绩': s.get('score_二模', ''),
-            '测试试卷': s.get('test_paper', ''),
-            '测试地点': s.get('test_location', ''),
-            '数学': s.get('math_score', ''),
-            '英语': s.get('english_score', ''),
-            '总分': s.get('total_score', ''),
-            '评价等级': s.get('evaluation', ''),
-            '承诺班型': s.get('promised_class', ''),
-            '认定编号': s.get('recognition_no', ''),
-            '负责老师': s.get('assigned_teacher') or s.get('teacher', ''),
-            '备注': s.get('remark', ''),
-        })
+    try:
+        rows = []
+        for s in students:
+            rows.append({
+                '学生姓名': s.get('name', '') or '',
+                '性别': s.get('gender', '') or '',
+                '联系电话1': s.get('phone1', '') or '',
+                '联系电话2': s.get('phone2', '') or '',
+                '行政区': s.get('district', '') or '',
+                '初中学校名称': s.get('school', '') or '',
+                '毕业年份': s.get('graduation_year', '') if s.get('graduation_year') is not None else '',
+                '班级': s.get('class_name', '') or '',
+                '年级总人数': s.get('grade_total', '') if s.get('grade_total') is not None else '',
+                '八上期末年级排名': s.get('rank_初一上', '') if s.get('rank_初一上') is not None else '',
+                '八下期末年级排名': s.get('rank_初一下', '') if s.get('rank_初一下') is not None else '',
+                '九上期中年级排名': s.get('rank_初二上', '') if s.get('rank_初二上') is not None else '',
+                '九上期末排名': s.get('rank_初二下', '') if s.get('rank_初二下') is not None else '',
+                '九上期末分数': s.get('score_初三上期末', '') or '',
+                '一模成绩': s.get('score_一模', '') or '',
+                '二模成绩': s.get('score_二模', '') or '',
+                '测试试卷': s.get('test_paper', '') or '',
+                '测试地点': s.get('test_location', '') or '',
+                '数学': s.get('math_score', '') or '',
+                '英语': s.get('english_score', '') or '',
+                '总分': s.get('total_score', '') or '',
+                '评价等级': s.get('evaluation', '') or '',
+                '承诺班型': s.get('promised_class', '') or '',
+                '认定编号': s.get('recognition_no', '') or '',
+                '负责老师': s.get('assigned_teacher') or s.get('teacher', '') or '',
+                '备注': s.get('remark', '') or '',
+            })
 
-    df = pd.DataFrame(rows)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='学生信息')
-        workbook = writer.book
-        worksheet = writer.sheets['学生信息']
-        header_fmt = workbook.add_format({'bold': True, 'bg_color': '#1a56db', 'font_color': 'white', 'border': 1})
-        for col_num, col_name in enumerate(df.columns):
-            worksheet.write(0, col_num, col_name, header_fmt)
-            worksheet.set_column(col_num, col_num, max(len(str(col_name)) * 2, 12))
-    output.seek(0)
+        df = pd.DataFrame(rows)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='学生信息')
+            workbook = writer.book
+            worksheet = writer.sheets['学生信息']
+            header_fmt = workbook.add_format({'bold': True, 'bg_color': '#1a56db', 'font_color': 'white', 'border': 1})
+            for col_num, col_name in enumerate(df.columns):
+                worksheet.write(0, col_num, col_name, header_fmt)
+                worksheet.set_column(col_num, col_num, max(len(str(col_name)) * 2, 12))
+        output.seek(0)
 
-    from flask import Response
-    filename = f"学生信息导出_{beijing_now().replace(':', '-').replace(' ', '_')}.xlsx"
-    return Response(
-        output.getvalue(),
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': f'attachment; filename*=UTF-8\'\'{filename}'}
-    )
+        from flask import Response
+        filename = f"学生信息导出_{beijing_now().replace(':', '-').replace(' ', '_')}.xlsx"
+        from urllib.parse import quote
+        encoded_filename = quote(filename)
+        return Response(
+            output.getvalue(),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={
+                'Content-Disposition': f'attachment; filename="export.xlsx"; filename*=UTF-8\'\'{encoded_filename}',
+                'Content-Length': str(len(output.getvalue()))
+            }
+        )
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'生成Excel失败: {str(e)}'}), 500
 
 
 # ============================================================
