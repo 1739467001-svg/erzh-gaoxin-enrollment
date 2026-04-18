@@ -6,6 +6,186 @@ let allStudents = [];
 let signPreviewStudents = [];
 
 const API_BASE = '';
+const AUTH_STORAGE_KEY = 'studentRecognitionCurrentUser';
+const PAGE_STORAGE_KEY = 'studentRecognitionActivePage';
+
+function persistCurrentUser() {
+    if (!currentUser) return;
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
+}
+
+function persistActivePage(pageId) {
+    if (!pageId || pageId === 'loginPage') {
+        localStorage.removeItem(PAGE_STORAGE_KEY);
+        return;
+    }
+    localStorage.setItem(PAGE_STORAGE_KEY, pageId);
+}
+
+function clearLoginState() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(PAGE_STORAGE_KEY);
+}
+
+function restoreCurrentUser() {
+    try {
+        const saved = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (!saved) return null;
+        const parsed = JSON.parse(saved);
+        if (!parsed || !parsed.username || !parsed.role || !parsed.name) return null;
+        return parsed;
+    } catch (e) {
+        clearLoginState();
+        return null;
+    }
+}
+
+function getSavedActivePage() {
+    return localStorage.getItem(PAGE_STORAGE_KEY) || 'adminPage';
+}
+
+function restoreUserSession() {
+    const savedUser = restoreCurrentUser();
+    if (!savedUser) return;
+    currentUser = savedUser;
+    showMainPage(getSavedActivePage());
+}
+
+function openSavedPage(pageId) {
+    switch (pageId) {
+        case 'registerPage':
+            switchToRegister();
+            break;
+        case 'addStudentPage':
+            switchToAddStudent();
+            break;
+        case 'editPage':
+            switchToAdmin();
+            break;
+        case 'userManagementPage':
+            if (currentUser.role === 'admin') {
+                switchToUserManagement();
+            } else {
+                switchToAdmin();
+            }
+            break;
+        case 'statsPage':
+            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+                switchToStats();
+            } else {
+                switchToAdmin();
+            }
+            break;
+        case 'logsPage':
+            if (currentUser.role === 'admin') {
+                switchToLogs();
+            } else {
+                switchToAdmin();
+            }
+            break;
+        case 'signContractPage':
+            switchToSignContract();
+            break;
+        case 'examPapersPage':
+            switchToExamPapers();
+            break;
+        default:
+            switchToAdmin();
+            break;
+    }
+}
+
+function requireCurrentUser() {
+    if (currentUser) return true;
+    clearLoginState();
+    showPage('loginPage');
+    return false;
+}
+
+function syncCurrentUserDisplay() {
+    if (!currentUser) return;
+    const displayText = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+    ['currentUser', 'currentUserAdmin', 'currentUserAddStudent', 'currentUserEdit', 'currentUserUserManagement', 'currentUserStats', 'currentUserLogs', 'currentUserSign', 'currentUserExam']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = displayText;
+        });
+}
+
+function isProtectedPage(pageId) {
+    return pageId && pageId !== 'loginPage';
+}
+
+function handleSessionExpired() {
+    currentUser = null;
+    clearLoginState();
+    stopAutoRefresh();
+    showPage('loginPage');
+    document.getElementById('loginError').textContent = '登录状态已失效，请重新登录';
+}
+
+async function fetchWithAuth(url, options = {}) {
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+        handleSessionExpired();
+        throw new Error('登录状态已失效');
+    }
+    return response;
+}
+
+function guardedPageSwitch(pageId, callback) {
+    if (!requireCurrentUser()) return;
+    callback();
+    if (isProtectedPage(pageId)) persistActivePage(pageId);
+}
+
+function refreshActivePage() {
+    const page = _currentActivePage;
+    if (!page || !currentUser) return;
+    switch (page) {
+        case 'adminPage':
+            loadStudents();
+            break;
+        case 'statsPage':
+            loadStatistics();
+            break;
+        case 'logsPage':
+            loadLogs();
+            break;
+        case 'userManagementPage':
+            loadUsers();
+            break;
+        case 'examPapersPage':
+            loadExamPapers();
+            break;
+    }
+}
+
+function showMainPage(targetPage = 'adminPage') {
+    if (!requireCurrentUser()) return;
+    syncCurrentUserDisplay();
+    openSavedPage(targetPage);
+}
+
+function showPage(pageId) {
+    closeAllMobileMenus();
+    document.querySelectorAll('.page').forEach(p => {
+        p.style.display = 'none';
+        p.style.visibility = 'hidden';
+    });
+    const el = document.getElementById(pageId);
+    el.style.visibility = 'visible';
+    el.style.display = (pageId === 'loginPage') ? 'flex' : 'block';
+    _currentActivePage = pageId;
+    if (pageId === 'loginPage') {
+        stopAutoRefresh();
+        localStorage.removeItem(PAGE_STORAGE_KEY);
+    } else {
+        persistActivePage(pageId);
+        startAutoRefresh();
+    }
+}
+
 
 // ============================================================
 // 数据一致性：自动轮询刷新机制
@@ -28,29 +208,6 @@ function stopAutoRefresh() {
         _refreshTimer = null;
     }
 }
-
-function refreshActivePage() {
-    const page = _currentActivePage;
-    if (!page) return;
-    switch (page) {
-        case 'adminPage':
-            loadStudents();
-            break;
-        case 'statsPage':
-            loadStatistics();
-            break;
-        case 'logsPage':
-            loadLogs();
-            break;
-        case 'userManagementPage':
-            loadUsers();
-            break;
-        case 'examPapersPage':
-            loadExamPapers();
-            break;
-    }
-}
-
 
 // ============================================================
 // 手机端汉堡菜单
@@ -176,7 +333,7 @@ async function login() {
         return;
     }
     try {
-        const res = await fetch(`${API_BASE}/api/login`, {
+        const res = await fetchWithAuth(`${API_BASE}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -184,17 +341,24 @@ async function login() {
         const data = await res.json();
         if (data.success) {
             currentUser = data.user;
-            showMainPage();
+            persistCurrentUser();
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').textContent = '';
+            showMainPage(getSavedActivePage());
         } else {
+            clearLoginState();
             document.getElementById('loginError').textContent = data.message || '用户名或密码错误';
         }
     } catch (e) {
-        document.getElementById('loginError').textContent = '网络错误，请稍后重试';
+        if (e.message !== '登录状态已失效') {
+            document.getElementById('loginError').textContent = '网络错误，请稍后重试';
+        }
     }
 }
 
 function logout() {
     currentUser = null;
+    clearLoginState();
     stopAutoRefresh();
     showPage('loginPage');
     document.getElementById('username').value = '';
@@ -202,82 +366,78 @@ function logout() {
     document.getElementById('loginError').textContent = '';
 }
 
-function showMainPage() {
-    switchToAdmin();
-}
-
 // ============================================================
 // 页面切换
 // ============================================================
-function showPage(pageId) {
-    closeAllMobileMenus();
-    document.querySelectorAll('.page').forEach(p => {
-        p.style.display = 'none';
-        p.style.visibility = 'hidden';
-    });
-    const el = document.getElementById(pageId);
-    el.style.visibility = 'visible';
-    el.style.display = (pageId === 'loginPage') ? 'flex' : 'block';
-    _currentActivePage = pageId;
-    if (pageId === 'loginPage') {
-        stopAutoRefresh();
-    } else {
-        startAutoRefresh();
-    }
-}
 
 function switchToRegister() {
-    showPage('registerPage');
-    document.getElementById('currentUser').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    document.getElementById('adminBtn').style.display = (currentUser.role !== 'teacher') ? 'inline-block' : 'none';
+    guardedPageSwitch('registerPage', () => {
+        showPage('registerPage');
+        document.getElementById('currentUser').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        document.getElementById('adminBtn').style.display = (currentUser.role !== 'teacher') ? 'inline-block' : 'none';
+    });
 }
 
 function switchToAdmin() {
-    showPage('adminPage');
-    document.getElementById('currentUserAdmin').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    const isAdmin = currentUser.role === 'admin';
-    const isManager = currentUser.role === 'admin' || currentUser.role === 'manager';
-    const isTeacher = currentUser.role === 'teacher';
-    document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
-    document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    const navSignBtn = document.getElementById('navSignBtn');
-    if (navSignBtn) navSignBtn.style.display = (isManager || isTeacher) ? 'inline-block' : 'none';
-    const btnNewStudent = document.getElementById('btnNewStudent');
-    const btnImportSign = document.getElementById('btnImportSign');
-    const btnExportAll = document.getElementById('btnExportAll');
-    const btnTemplate = document.getElementById('btnTemplate');
-    if (btnNewStudent) btnNewStudent.style.display = 'inline-block';
-    if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
-    if (btnExportAll) btnExportAll.style.display = 'inline-block';
-    if (btnTemplate) btnTemplate.style.display = 'inline-block';
-    loadStudents();
+    guardedPageSwitch('adminPage', () => {
+        showPage('adminPage');
+        document.getElementById('currentUserAdmin').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        const isAdmin = currentUser.role === 'admin';
+        const isManager = currentUser.role === 'admin' || currentUser.role === 'manager';
+        const isTeacher = currentUser.role === 'teacher';
+        document.getElementById('userManagementBtn').style.display = isAdmin ? 'inline-block' : 'none';
+        document.getElementById('statsBtn').style.display = isManager ? 'inline-block' : 'none';
+        document.getElementById('logsBtn').style.display = isAdmin ? 'inline-block' : 'none';
+        const navSignBtn = document.getElementById('navSignBtn');
+        if (navSignBtn) navSignBtn.style.display = (isManager || isTeacher) ? 'inline-block' : 'none';
+        const btnNewStudent = document.getElementById('btnNewStudent');
+        const btnImportSign = document.getElementById('btnImportSign');
+        const btnExportAll = document.getElementById('btnExportAll');
+        const btnTemplate = document.getElementById('btnTemplate');
+        const btnClearAll = document.getElementById('btnClearAll');
+        const btnAutoNumber = document.getElementById('btnAutoNumber');
+        if (btnNewStudent) btnNewStudent.style.display = 'inline-block';
+        if (btnImportSign) btnImportSign.style.display = isTeacher ? 'none' : 'inline-block';
+        if (btnExportAll) btnExportAll.style.display = 'inline-block';
+        if (btnTemplate) btnTemplate.style.display = 'inline-block';
+        if (btnAutoNumber) btnAutoNumber.style.display = isManager ? 'inline-block' : 'none';
+        if (btnClearAll) btnClearAll.style.display = isAdmin ? 'inline-block' : 'none';
+        loadStudents();
+    });
 }
 
 function switchToAddStudent() {
-    showPage('addStudentPage');
-    document.getElementById('currentUserAddStudent').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    document.getElementById('addStudentForm').reset();
+    guardedPageSwitch('addStudentPage', () => {
+        showPage('addStudentPage');
+        document.getElementById('currentUserAddStudent').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        document.getElementById('addStudentForm').reset();
+    });
 }
 
 function switchToUserManagement() {
-    showPage('userManagementPage');
-    document.getElementById('currentUserUserManagement').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    loadUsers();
+    guardedPageSwitch('userManagementPage', () => {
+        showPage('userManagementPage');
+        document.getElementById('currentUserUserManagement').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        loadUsers();
+    });
 }
 
 function switchToSignContract() {
-    showPage('signContractPage');
-    document.getElementById('currentUserSign').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    resetSignPage();
+    guardedPageSwitch('signContractPage', () => {
+        showPage('signContractPage');
+        document.getElementById('currentUserSign').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        resetSignPage();
+    });
 }
 
 function switchToExamPapers() {
-    showPage('examPapersPage');
-    document.getElementById('currentUserExam').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    const canUpload = currentUser && currentUser.role === 'admin';
-    document.getElementById('uploadPaperCard').style.display = canUpload ? 'block' : 'none';
-    loadExamPapers();
+    guardedPageSwitch('examPapersPage', () => {
+        showPage('examPapersPage');
+        document.getElementById('currentUserExam').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        const canUpload = currentUser && currentUser.role === 'admin';
+        document.getElementById('uploadPaperCard').style.display = canUpload ? 'block' : 'none';
+        loadExamPapers();
+    });
 }
 
 function backFromExamPapers() {
@@ -285,15 +445,19 @@ function backFromExamPapers() {
 }
 
 async function switchToStats() {
-    showPage('statsPage');
-    document.getElementById('currentUserStats').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    loadStatistics();
+    guardedPageSwitch('statsPage', () => {
+        showPage('statsPage');
+        document.getElementById('currentUserStats').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        loadStatistics();
+    });
 }
 
 async function switchToLogs() {
-    showPage('logsPage');
-    document.getElementById('currentUserLogs').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
-    loadLogs();
+    guardedPageSwitch('logsPage', () => {
+        showPage('logsPage');
+        document.getElementById('currentUserLogs').textContent = `${currentUser.name}（${roleLabel(currentUser.role)}）`;
+        loadLogs();
+    });
 }
 
 function roleLabel(role) {
@@ -350,6 +514,92 @@ async function submitChangePassword() {
             showToast('密码修改成功！', 'success');
         } else {
             errEl.textContent = result.message || '修改失败';
+        }
+    } catch (e) {
+        errEl.textContent = '网络错误，请重试';
+    }
+}
+
+// ============================================================
+// 一键编号（管理员及以上）
+// 按当前列表展示顺序，从 2600001 开始依次写入数据库
+// ============================================================
+async function autoNumberStudents() {
+    if (!allStudents || allStudents.length === 0) {
+        showToast('当前无学生数据，请先导入数据', 'error');
+        return;
+    }
+    const total = allStudents.length;
+    const confirmed = window.confirm(
+        `即将对当前列表中全部 ${total} 位学生重新分配认定编号，\n编号范围：2600001 ~ ${2600000 + total}\n\n原有编号将被覆盖，确认执行？`
+    );
+    if (!confirmed) return;
+
+    const btn = document.getElementById('btnAutoNumber');
+    btn.disabled = true;
+    btn.textContent = '编号中...';
+
+    // 按当前展示顺序提取 id 列表
+    const studentIds = allStudents.map(s => s.id);
+
+    try {
+        const res = await fetch(`${API_BASE}/api/students/auto-number`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                student_ids: studentIds,
+                operator_name: currentUser.name,
+                operator_role: currentUser.role
+            })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast('✓ ' + result.message, 'success');
+            loadStudents();  // 刷新列表，自动按编号排序
+        } else {
+            showToast('编号失败：' + result.message, 'error');
+        }
+    } catch (e) {
+        showToast('网络错误，请重试', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '一键编号';
+    }
+}
+
+// ============================================================
+// 一键清空学生数据（仅超级管理员）
+// ============================================================
+function showClearAllModal() {
+    document.getElementById('clearAllConfirmInput').value = '';
+    document.getElementById('clearAllError').textContent = '';
+    document.getElementById('clearAllModal').style.display = 'flex';
+}
+
+function closeClearAllModal() {
+    document.getElementById('clearAllModal').style.display = 'none';
+}
+
+async function confirmClearAll() {
+    const input = document.getElementById('clearAllConfirmInput').value.trim();
+    const errEl = document.getElementById('clearAllError');
+    if (input !== '确认清空') {
+        errEl.textContent = '输入内容不正确，请输入《确认清空》';
+        return;
+    }
+    errEl.textContent = '';
+    try {
+        const res = await fetch(
+            `${API_BASE}/api/students/clear-all?operator_name=${encodeURIComponent(currentUser.name)}&operator_role=${currentUser.role}&confirm=yes`,
+            { method: 'DELETE' }
+        );
+        const result = await res.json();
+        if (result.success) {
+            closeClearAllModal();
+            showToast(result.message || '清空成功', 'success');
+            loadStudents();
+        } else {
+            errEl.textContent = result.message || '清空失败';
         }
     } catch (e) {
         errEl.textContent = '网络错误，请重试';
@@ -475,6 +725,15 @@ async function loadStudents() {
         }
         const res = await fetch(url);
         allStudents = await res.json();
+        // 默认按认定编号从小到大排序：有编号的排前，无编号的排后
+        allStudents.sort((a, b) => {
+            const na = parseInt(a.recognition_no) || 0;
+            const nb = parseInt(b.recognition_no) || 0;
+            if (na && nb) return na - nb;       // 两者都有编号：按编号升序
+            if (na) return -1;                  // a有编号、b没有：a排前
+            if (nb) return 1;                   // b有编号、a没有：b排前
+            return a.id - b.id;                 // 两者都无编号：按id升序
+        });
         renderStudentTable(allStudents);
         populateFilterOptions(allStudents);
     } catch (e) {
@@ -568,6 +827,7 @@ function renderStudentTable(students) {
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td>${s.name || ''}</td>
+            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
             <td>${s.gender || ''}</td>
             <td>${s.phone1 || ''}</td>
             <td>${s.phone2 || ''}</td>
@@ -590,7 +850,6 @@ function renderStudentTable(students) {
             <td>${s.total_score || ''}</td>
             <td>${s.evaluation || ''}</td>
             <td>${s.promised_class || ''}</td>
-            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
             <td>${s.assigned_teacher || s.teacher || ''}</td>
             <td>${truncate(s.remark, 18)}</td>
             <td>${s.createTime || ''}</td>
@@ -722,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 reason: reason,
                 score: score,
                 promised_class: promisedClass,
-                is_signed: document.getElementById('regIsConfirmed').value === '是' ? 1 : 0,
+                is_certified: document.getElementById('regIsConfirmed').value === '是' ? 1 : 0,
                 remark: document.getElementById('remark').value,
                 teacher: currentUser.name,
                 assigned_teacher: currentUser.name
@@ -734,7 +993,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await res.json();
             if (result.success) {
-                showToast('学生认定登记成功！', 'success');
+                const certMsg = result.recognition_no
+                    ? `学生认定登记成功！认定编号：${result.recognition_no}`
+                    : '学生登记成功！';
+                showToast(certMsg, 'success');
                 studentForm.reset();
             } else {
                 showToast('登记失败：' + result.message, 'error');
@@ -865,6 +1127,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('password').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') login();
     });
+
+    restoreUserSession();
 });
 
 // ============================================================
@@ -1130,7 +1394,10 @@ function renderSignPreviewTable() {
     signPreviewStudents.forEach((s, idx) => {
         const tr = document.createElement('tr');
         tr.dataset.idx = idx;
-        const recognitionNo = s.recognition_no || '';
+        const isCertified = s.is_certified === 1 || s.is_certified === '1';
+        const certBadge = isCertified
+            ? '<span class="badge badge-success">将认定（系统分配编号）</span>'
+            : '<span class="badge badge-secondary">不认定</span>';
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td><span class="cell-val">${s.name || ''}</span></td>
@@ -1156,7 +1423,7 @@ function renderSignPreviewTable() {
             <td><span class="cell-val">${s.total_score || ''}</span></td>
             <td><span class="cell-val">${s.evaluation || ''}</span></td>
             <td><span class="cell-val">${s.promised_class || ''}</span></td>
-            <td><span class="cell-val">${recognitionNo}</span></td>
+            <td>${certBadge}</td>
             <td><span class="cell-val">${s.assigned_teacher || s.teacher || ''}</span></td>
             <td><span class="cell-val">${s.remark || ''}</span></td>
             <td>
@@ -1204,7 +1471,10 @@ function openSignEditModal(idx) {
     document.getElementById('signEditTotal').value = s.total_score || '';
     document.getElementById('signEditEval').value = s.evaluation || '';
     document.getElementById('signEditPromised').value = s.promised_class || '';
-    document.getElementById('signEditRecognitionNo').value = s.recognition_no || '';
+    // 是否认定：优先看is_certified，其次看is_signed
+    const isCertVal = (s.is_certified === 1 || s.is_certified === '1' || s.is_signed === 1 || s.is_signed === '1') ? '1' : '0';
+    document.getElementById('signEditIsCertified').value = isCertVal;
+    document.getElementById('signEditRecognitionNo').value = '';
     document.getElementById('signEditTeacher').value = s.assigned_teacher || s.teacher || '';
     document.getElementById('signEditRemark').value = s.remark || '';
     document.getElementById('signEditModal').style.display = 'flex';
@@ -1217,7 +1487,7 @@ function closeSignEditModal(event) {
 
 function saveSignEdit() {
     const idx = parseInt(document.getElementById('signEditIndex').value);
-    const recognitionNo = document.getElementById('signEditRecognitionNo').value.trim();
+    const isCertified = parseInt(document.getElementById('signEditIsCertified').value);
     signPreviewStudents[idx] = {
         name: document.getElementById('signEditName').value,
         gender: document.getElementById('signEditGender').value,
@@ -1242,8 +1512,9 @@ function saveSignEdit() {
         total_score: document.getElementById('signEditTotal').value,
         evaluation: document.getElementById('signEditEval').value,
         promised_class: document.getElementById('signEditPromised').value,
-        recognition_no: recognitionNo,
-        is_signed: recognitionNo ? 1 : 0,
+        is_certified: isCertified,  // 由系统在batch_sign时自动分配认定编号
+        is_signed: 0,               // 入库前不设置
+        recognition_no: '',         // 入库前不设置
         assigned_teacher: document.getElementById('signEditTeacher').value,
         teacher: document.getElementById('signEditTeacher').value,
         remark: document.getElementById('signEditRemark').value
@@ -1261,7 +1532,7 @@ function proceedToConfirm() {
     document.getElementById('signStep3').style.display = 'block';
     setSignStep(3);
 
-    const signedCount = signPreviewStudents.filter(s => s.recognition_no || s.is_signed).length;
+    const signedCount = signPreviewStudents.filter(s => s.is_certified === 1 || s.is_certified === '1').length;
     const summary = document.getElementById('confirmSummary');
     summary.innerHTML = `
         <div class="confirm-stat">
