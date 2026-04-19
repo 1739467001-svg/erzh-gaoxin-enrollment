@@ -524,12 +524,44 @@ async function submitChangePassword() {
 // 一键编号（管理员及以上）
 // 按当前列表展示顺序，从 2600001 开始依次写入数据库
 // ============================================================
+function getCurrentFilteredStudents() {
+    const keyword  = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+    const signed   = document.getElementById('filterSigned')?.value || '';
+    const district = document.getElementById('filterDistrict')?.value || '';
+    const teacher  = document.getElementById('filterTeacher')?.value || '';
+    const cls      = document.getElementById('filterClass')?.value || '';
+
+    return allStudents.filter(s => {
+        if (keyword && !(
+            (s.name || '').toLowerCase().includes(keyword) ||
+            (s.school || '').toLowerCase().includes(keyword) ||
+            (s.phone1 || '').includes(keyword)
+        )) return false;
+        if (signed !== '') {
+            const isSigned = !!(s.recognition_no || s.is_signed);
+            if (signed === '1' && !isSigned) return false;
+            if (signed === '0' && isSigned) return false;
+        }
+        if (district && (s.district || '') !== district) return false;
+        if (teacher  && (s.assigned_teacher || s.teacher || '') !== teacher) return false;
+        if (cls      && (s.promised_class || '') !== cls) return false;
+        return true;
+    });
+}
+
 async function autoNumberStudents() {
     if (!allStudents || allStudents.length === 0) {
         showToast('当前无学生数据，请先导入数据', 'error');
         return;
     }
-    const total = allStudents.length;
+
+    const currentStudents = getCurrentFilteredStudents();
+    if (!currentStudents || currentStudents.length === 0) {
+        showToast('当前列表无可编号学生，请先调整筛选条件', 'error');
+        return;
+    }
+
+    const total = currentStudents.length;
     const confirmed = window.confirm(
         `即将对当前列表中全部 ${total} 位学生重新分配认定编号，\n编号范围：2600001 ~ ${2600000 + total}\n\n原有编号将被覆盖，确认执行？`
     );
@@ -539,8 +571,7 @@ async function autoNumberStudents() {
     btn.disabled = true;
     btn.textContent = '编号中...';
 
-    // 按当前展示顺序提取 id 列表
-    const studentIds = allStudents.map(s => s.id);
+    const studentIds = currentStudents.map(s => s.id);
 
     try {
         const res = await fetch(`${API_BASE}/api/students/auto-number`, {
@@ -555,7 +586,7 @@ async function autoNumberStudents() {
         const result = await res.json();
         if (result.success) {
             showToast('✓ ' + result.message, 'success');
-            loadStudents();  // 刷新列表，自动按编号排序
+            loadStudents();
         } else {
             showToast('编号失败：' + result.message, 'error');
         }
@@ -864,28 +895,7 @@ function renderStudentTable(students) {
 
 // 高级筛选（客户端过滤）
 function applyFilters() {
-    const keyword  = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
-    const signed   = document.getElementById('filterSigned')?.value || '';
-    const district = document.getElementById('filterDistrict')?.value || '';
-    const teacher  = document.getElementById('filterTeacher')?.value || '';
-    const cls      = document.getElementById('filterClass')?.value || '';
-
-    const filtered = allStudents.filter(s => {
-        if (keyword && !(
-            (s.name || '').toLowerCase().includes(keyword) ||
-            (s.school || '').toLowerCase().includes(keyword) ||
-            (s.phone1 || '').includes(keyword)
-        )) return false;
-        if (signed !== '') {
-            const isSigned = !!(s.recognition_no || s.is_signed);
-            if (signed === '1' && !isSigned) return false;
-            if (signed === '0' && isSigned) return false;
-        }
-        if (district && (s.district || '') !== district) return false;
-        if (teacher  && (s.assigned_teacher || s.teacher || '') !== teacher)  return false;
-        if (cls      && (s.promised_class || '') !== cls) return false;
-        return true;
-    });
+    const filtered = getCurrentFilteredStudents();
     updateFilterActiveTag();
     renderStudentTable(filtered);
 }

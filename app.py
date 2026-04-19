@@ -435,6 +435,117 @@ def delete_student(student_id):
 
 
 # ============================================================
+# 一键清空学生数据（仅超级管理员）
+# ============================================================
+@app.route('/api/students/clear-all', methods=['DELETE'])
+def clear_all_students():
+    operator_name = request.args.get('operator_name', '')
+    operator_role = request.args.get('operator_role', '')
+    confirm = request.args.get('confirm', '')
+    # 仅允许超级管理员（admin角色）操作
+    if operator_role != 'admin':
+        return jsonify({'success': False, 'message': '权限不足，仅超级管理员可执行此操作'})
+    if confirm != 'yes':
+        return jsonify({'success': False, 'message': '请传入 confirm=yes 参数确认操作'})
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute('SELECT COUNT(*) as cnt FROM students')
+            row = c.fetchone()
+            total = row['cnt'] if row else 0
+            c.execute('DELETE FROM students')
+        conn.commit()
+        conn.close()
+        add_log(operator_name, '一键清空', '全部学生数据', f'共删除 {total} 条记录')
+        return jsonify({'success': True, 'message': f'已成功清空 {total} 条学生数据', 'deleted': total})
+    except Exception as e:
+        conn.close()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# ============================================================
+# 一键编号（超级管理员和管理员可用）
+# 按传入的 student_ids 顺序，从 2600001 开始依次分配认定编号并写入数据库
+# ============================================================
+@app.route('/api/students/auto-number', methods=['POST'])
+def auto_number_students():
+    data = request.get_json() or {}
+    operator_name = data.get('operator_name', '')
+    operator_role = data.get('operator_role', '')
+    raw_student_ids = data.get('student_ids', [])  # 按展示顺序传入的 id 列表
+    if operator_role not in ('admin', 'manager'):
+        return jsonify({'success': False, 'message': '权限不足，仅管理员及以上可执行此操作'})
+    if not raw_student_ids:
+        return jsonify({'success': False, 'message': '未提供学生列表'})
+
+    student_ids = []
+    seen_ids = set()
+    for sid in raw_student_ids:
+        try:
+            sid_int = int(sid)
+        except Exception:
+            continue
+        if sid_int <= 0 or sid_int in seen_ids:
+            continue
+        seen_ids.add(sid_int)
+        student_ids.append(sid_int)
+
+    if not student_ids:
+        return jsonify({'success': False, 'message': '学生列表无效，请刷新后重试'})
+
+    start_no = 2600001
+    end_no = start_no + len(student_ids) - 1
+    id_placeholders = ','.join(['%s'] * len(student_ids))
+    temp_prefix = f"TMP{uuid.uuid4().hex[:10]}"
+
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute(f'SELECT id FROM students WHERE id IN ({id_placeholders})', student_ids)
+            existing_ids = {row['id'] for row in c.fetchall()}
+            missing_ids = [sid for sid in student_ids if sid not in existing_ids]
+            if missing_ids:
+                raise ValueError('部分学生不存在，请刷新列表后重试')
+
+            for sid in student_ids:
+                c.execute(
+                    'UPDATE students SET recognition_no=%s, is_signed=1 WHERE id=%s',
+                    (f'{temp_prefix}{sid}', sid)
+                )
+
+            conflict_sql = f'''
+                UPDATE students
+                SET recognition_no='', is_signed=0
+                WHERE recognition_no REGEXP '^[0-9]+$'
+                  AND CAST(recognition_no AS UNSIGNED) BETWEEN %s AND %s
+                  AND id NOT IN ({id_placeholders})
+            '''
+            c.execute(conflict_sql, [start_no, end_no, *student_ids])
+            cleared_count = c.rowcount
+
+            for i, sid in enumerate(student_ids):
+                new_no = str(start_no + i)
+                c.execute(
+                    'UPDATE students SET recognition_no=%s, is_signed=1 WHERE id=%s',
+                    (new_no, sid)
+                )
+
+        conn.commit()
+        conn.close()
+        add_log(operator_name, '一键编号', '当前列表', f'共分配 {len(student_ids)} 个编号，范围 {start_no}-{end_no}，清理冲突 {cleared_count} 条')
+        return jsonify({
+            'success': True,
+            'message': f'已成功为 {len(student_ids)} 位学生重新分配认定编号，范围：{start_no} ~ {end_no}',
+            'count': len(student_ids),
+            'cleared_conflicts': cleared_count
+        })
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# ============================================================
 # 用户管理
 # ============================================================
 @app.route('/api/users', methods=['GET'])
@@ -667,7 +778,16 @@ def preview_excel():
                 except Exception:
                     return str(val).strip()
 
-            recognition_no = safe(row.get('认定编号', ''))
+            # 判断是否需要认定：表格中"认定编号"列有值（非空）则认定，系统忽略原始编号并自动分配新编号
+            # 同时兼容"是否认定"列（如果表格有该列）
+            recognition_no_raw = safe(row.get('认定编号', ''))
+            is_certified_col = safe(row.get('是否认定', ''))
+            if recognition_no_raw:  # 认定编号列有值，视为需要认定
+                is_certified = 1
+            elif is_certified_col in ('是', '1', 'yes', 'Yes', 'YES', 'true', 'True'):  # 兼容是否认定列
+                is_certified = 1
+            else:
+                is_certified = 0
             students.append({
                 'name': safe(row.get('学生姓名', '')),
                 'gender': safe(row.get('性别', '')),
@@ -692,8 +812,9 @@ def preview_excel():
                 'total_score': safe(row.get('总分', '')),
                 'evaluation': safe(row.get('评价等级', '')),
                 'promised_class': safe(row.get('承诺班型', '')),
-                'is_signed': 1 if recognition_no else 0,
-                'recognition_no': recognition_no,
+                'is_certified': is_certified,   # 标记是否需要认定，编号由batch_sign统一分配
+                'is_signed': 0,                 # 入库前不设置，由batch_sign决定
+                'recognition_no': '',           # 忽略表格中的认定编号，由系统自动分配
                 'reason': '',
                 'score': safe(row.get('总分', '')),
                 'file_path': '',
@@ -721,11 +842,34 @@ def batch_sign():
         conn = get_db()
         create_time = beijing_now()
         success_count = 0
+
+        # 在循环外一次性获取当前最大编号，循环内用本地计数器递增，避免同一事务内重复查读导致编号重复
+        with get_db().cursor() as _c:
+            _c.execute("SELECT recognition_no FROM students WHERE recognition_no REGEXP '^[0-9]+$' ORDER BY CAST(recognition_no AS UNSIGNED) DESC LIMIT 1")
+            _row = _c.fetchone()
+        try:
+            _last_no = int(_row['recognition_no']) if _row and _row['recognition_no'] else 0
+        except Exception:
+            _last_no = 0
+        next_no = max(_last_no + 1, 2600001)  # 下一个将要分配的编号
+
         with conn.cursor() as c:
             for s in students:
                 try:
                     assigned = s.get('assigned_teacher') or s.get('teacher') or teacher
                     creator = teacher
+
+                    # 认定编号由系统统一自动分配，忽略表格中的原始编号
+                    # is_certified=1 或 is_signed=1 均视为需要认定
+                    needs_cert = int(s.get('is_certified', 0)) == 1 or int(s.get('is_signed', 0)) == 1
+                    if needs_cert:
+                        recognition_no = str(next_no)
+                        next_no += 1  # 本地递增，下一条记录使用下一个编号
+                        is_signed = 1
+                    else:
+                        recognition_no = ''
+                        is_signed = 0
+
                     c.execute('''INSERT INTO students (
                         name, gender, phone1, phone2, district, school, graduation_year,
                         class_name, grade_total, rank_初一上, rank_初一下, rank_初二上,
@@ -743,9 +887,9 @@ def batch_sign():
                         s.get('test_paper', ''), s.get('test_location', ''),
                         s.get('math_score', ''), s.get('english_score', ''), s.get('total_score', ''),
                         s.get('evaluation', ''), s.get('promised_class', ''),
-                        s.get('is_signed', 0), s.get('reason', ''), s.get('score', ''),
+                        is_signed, s.get('reason', ''), s.get('score', ''),
                         s.get('file_path', ''), s.get('remark', ''),
-                        s.get('recognition_no', ''),
+                        recognition_no,
                         assigned, creator, create_time
                     ))
                     success_count += 1
@@ -844,16 +988,18 @@ def delete_exam_paper(paper_id):
 def generate_recognition_no():
     conn = get_db()
     with conn.cursor() as c:
-        c.execute("SELECT recognition_no FROM students WHERE recognition_no LIKE '26%' ORDER BY recognition_no DESC LIMIT 1")
+        c.execute("SELECT recognition_no FROM students WHERE recognition_no REGEXP '^[0-9]+$' ORDER BY CAST(recognition_no AS UNSIGNED) DESC LIMIT 1")
         row = c.fetchone()
     conn.close()
     if row and row['recognition_no']:
         try:
             last_num = int(row['recognition_no'])
-            return str(last_num + 1)
+            next_num = last_num + 1
+            # 确保至少7位，从2600001开始
+            return str(max(next_num, 2600001))
         except Exception:
             pass
-    return '260001'
+    return '2600001'
 
 
 # ============================================================
@@ -870,88 +1016,71 @@ def export_all_students():
         return jsonify({'success': False, 'message': '权限不足'}), 403
 
     import io
-    conn = None
-    try:
-        conn = get_db()
-        with conn.cursor() as c:
-            if operator_role == 'teacher':
-                # teacher 只导出分配给自己的学生
-                c.execute(
-                    'SELECT * FROM students WHERE assigned_teacher=%s OR assigned_teacher=%s OR teacher=%s OR teacher=%s ORDER BY id ASC',
-                    (operator_username, operator_name, operator_username, operator_name)
-                )
-            else:
-                c.execute('SELECT * FROM students ORDER BY id ASC')
-            students = c.fetchall()
-    except Exception as e:
-        if conn:
-            conn.close()
-        return jsonify({'success': False, 'message': f'数据库查询失败: {str(e)}'}), 500
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except Exception:
-                pass
+    conn = get_db()
+    with conn.cursor() as c:
+        if operator_role == 'teacher':
+            # teacher 只导出分配给自己的学生
+            c.execute(
+                'SELECT * FROM students WHERE assigned_teacher=%s OR assigned_teacher=%s OR teacher=%s OR teacher=%s ORDER BY id ASC',
+                (operator_username, operator_name, operator_username, operator_name)
+            )
+        else:
+            c.execute('SELECT * FROM students ORDER BY id ASC')
+        students = c.fetchall()
+    conn.close()
 
-    try:
-        rows = []
-        for s in students:
-            rows.append({
-                '学生姓名': s.get('name', '') or '',
-                '性别': s.get('gender', '') or '',
-                '联系电话1': s.get('phone1', '') or '',
-                '联系电话2': s.get('phone2', '') or '',
-                '行政区': s.get('district', '') or '',
-                '初中学校名称': s.get('school', '') or '',
-                '毕业年份': s.get('graduation_year', '') if s.get('graduation_year') is not None else '',
-                '班级': s.get('class_name', '') or '',
-                '年级总人数': s.get('grade_total', '') if s.get('grade_total') is not None else '',
-                '八上期末年级排名': s.get('rank_初一上', '') if s.get('rank_初一上') is not None else '',
-                '八下期末年级排名': s.get('rank_初一下', '') if s.get('rank_初一下') is not None else '',
-                '九上期中年级排名': s.get('rank_初二上', '') if s.get('rank_初二上') is not None else '',
-                '九上期末排名': s.get('rank_初二下', '') if s.get('rank_初二下') is not None else '',
-                '九上期末分数': s.get('score_初三上期末', '') or '',
-                '一模成绩': s.get('score_一模', '') or '',
-                '二模成绩': s.get('score_二模', '') or '',
-                '测试试卷': s.get('test_paper', '') or '',
-                '测试地点': s.get('test_location', '') or '',
-                '数学': s.get('math_score', '') or '',
-                '英语': s.get('english_score', '') or '',
-                '总分': s.get('total_score', '') or '',
-                '评价等级': s.get('evaluation', '') or '',
-                '承诺班型': s.get('promised_class', '') or '',
-                '认定编号': s.get('recognition_no', '') or '',
-                '负责老师': s.get('assigned_teacher') or s.get('teacher', '') or '',
-                '备注': s.get('remark', '') or '',
-            })
+    rows = []
+    for s in students:
+        rows.append({
+            '学生姓名': s.get('name', ''),
+            '性别': s.get('gender', ''),
+            '联系电话1': s.get('phone1', ''),
+            '联系电话2': s.get('phone2', ''),
+            '行政区': s.get('district', ''),
+            '初中学校名称': s.get('school', ''),
+            '毕业年份': s.get('graduation_year', ''),
+            '班级': s.get('class_name', ''),
+            '年级总人数': s.get('grade_total', ''),
+            '八上期末年级排名': s.get('rank_初一上', ''),
+            '八下期末年级排名': s.get('rank_初一下', ''),
+            '九上期中年级排名': s.get('rank_初二上', ''),
+            '九上期末排名': s.get('rank_初二下', ''),
+            '九上期末分数': s.get('score_初三上期末', ''),
+            '一模成绩': s.get('score_一模', ''),
+            '二模成绩': s.get('score_二模', ''),
+            '测试试卷': s.get('test_paper', ''),
+            '测试地点': s.get('test_location', ''),
+            '数学': s.get('math_score', ''),
+            '英语': s.get('english_score', ''),
+            '总分': s.get('total_score', ''),
+            '评价等级': s.get('evaluation', ''),
+            '承诺班型': s.get('promised_class', ''),
+            '认定编号': s.get('recognition_no', ''),
+            '负责老师': s.get('assigned_teacher') or s.get('teacher', ''),
+            '备注': s.get('remark', ''),
+        })
 
-        df = pd.DataFrame(rows)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='学生信息')
-            workbook = writer.book
-            worksheet = writer.sheets['学生信息']
-            header_fmt = workbook.add_format({'bold': True, 'bg_color': '#1a56db', 'font_color': 'white', 'border': 1})
-            for col_num, col_name in enumerate(df.columns):
-                worksheet.write(0, col_num, col_name, header_fmt)
-                worksheet.set_column(col_num, col_num, max(len(str(col_name)) * 2, 12))
-        output.seek(0)
+    df = pd.DataFrame(rows)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='学生信息')
+        workbook = writer.book
+        worksheet = writer.sheets['学生信息']
+        header_fmt = workbook.add_format({'bold': True, 'bg_color': '#1a56db', 'font_color': 'white', 'border': 1})
+        for col_num, col_name in enumerate(df.columns):
+            worksheet.write(0, col_num, col_name, header_fmt)
+            worksheet.set_column(col_num, col_num, max(len(str(col_name)) * 2, 12))
+    output.seek(0)
 
-        from flask import Response
-        filename = f"学生信息导出_{beijing_now().replace(':', '-').replace(' ', '_')}.xlsx"
-        from urllib.parse import quote
-        encoded_filename = quote(filename)
-        return Response(
-            output.getvalue(),
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            headers={
-                'Content-Disposition': f'attachment; filename="export.xlsx"; filename*=UTF-8\'\'{encoded_filename}',
-                'Content-Length': str(len(output.getvalue()))
-            }
-        )
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'生成Excel失败: {str(e)}'}), 500
+    from flask import Response
+    from urllib.parse import quote
+    filename = f"学生信息导出_{beijing_now().replace(':', '-').replace(' ', '_')}.xlsx"
+    encoded_filename = quote(filename, safe='')
+    return Response(
+        output.getvalue(),
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f"attachment; filename=\"export.xlsx\"; filename*=UTF-8''{encoded_filename}"}
+    )
 
 
 # ============================================================
