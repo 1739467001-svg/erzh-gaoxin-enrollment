@@ -1008,6 +1008,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '学生登记成功！';
                 showToast(certMsg, 'success');
                 studentForm.reset();
+                setTimeout(() => {
+                    switchToAdmin();
+                }, 300);
             } else {
                 showToast('登记失败：' + result.message, 'error');
             }
