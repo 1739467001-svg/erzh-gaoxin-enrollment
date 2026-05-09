@@ -723,15 +723,17 @@ thead th {
     text-transform: none;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 15;
+    background: linear-gradient(135deg, #0f2b5e 0%, #1e5fbb 100%);
 }
 
-/* 左侧序号和姓名列固定 */
+/* 左侧序号和姓名列固定（同时横向+纵向sticky） */
 thead th:nth-child(1),
 thead th:nth-child(2) {
     position: sticky;
     left: 0;
-    z-index: 11;
+    top: 0;
+    z-index: 20;
     background: linear-gradient(135deg, #0f2b5e 0%, #1e5fbb 100%);
     box-shadow: 4px 0 8px rgba(0, 0, 0, 0.15);
 }
@@ -741,11 +743,12 @@ thead th:nth-child(2) {
     border-right: 2px solid rgba(255, 255, 255, 0.3);
 }
 
-/* 右侧操作列固定 */
+/* 右侧操作列固定（同时横向+纵向sticky） */
 thead th:last-child {
     position: sticky;
     right: 0;
-    z-index: 11;
+    top: 0;
+    z-index: 20;
     background: linear-gradient(135deg, #0f2b5e 0%, #1e5fbb 100%);
     box-shadow: -4px 0 8px rgba(0, 0, 0, 0.15);
     border-left: 2px solid rgba(255, 255, 255, 0.3);
