@@ -1082,6 +1082,10 @@ def export_all_students():
             '联系电话2': s.get('phone2', ''),
             '行政区': s.get('district', ''),
             '初中学校名称': s.get('school', ''),
+            '承诺班型': s.get('promised_class', ''),
+            '认定编号': s.get('recognition_no', ''),
+            '负责老师': s.get('assigned_teacher') or s.get('teacher', ''),
+            '备注': s.get('remark', ''),
             '毕业年份': s.get('graduation_year', ''),
             '班级': s.get('class_name', ''),
             '年级总人数': s.get('grade_total', ''),
@@ -1098,11 +1102,8 @@ def export_all_students():
             '英语': s.get('english_score', ''),
             '总分': s.get('total_score', ''),
             '评价等级': s.get('evaluation', ''),
-            '承诺班型': s.get('promised_class', ''),
-            '认定编号': s.get('recognition_no', ''),
-            '负责老师': s.get('assigned_teacher') or s.get('teacher', ''),
-            '备注': s.get('remark', ''),
             '成绩文件': zip_file_name,
+            '登记时间': s.get('created_at', '') or '',
         })
 
     # 生成 Excel
