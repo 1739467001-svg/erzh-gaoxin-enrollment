@@ -2035,3 +2035,18 @@ tbody tr:hover td:last-child {
         width: 100%;
     }
 }
+
+/* 自动编号按钮 */
+.btn-blue-5 {
+    background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(167,139,250,0.3);
+}
+.btn-blue-5::after {
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+}
+.btn-blue-5:hover {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    box-shadow: 0 4px 12px rgba(167,139,250,0.4);
+}
