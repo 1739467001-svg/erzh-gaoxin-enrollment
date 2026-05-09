@@ -1007,7 +1007,7 @@ def generate_recognition_no():
 # ============================================================
 @app.route('/api/export-all-students', methods=['GET'])
 def export_all_students():
-    """导出学生信息为 Excel（所有角色均可，teacher只导出自己负责的学生）"""
+    """导出学生信息为 ZIP（Excel + 成绩文件），所有角色均可，teacher只导出自己负责的学生"""
     operator_role = request.args.get('role', '')
     operator_username = request.args.get('username', '')
     operator_name = request.args.get('name', '')
@@ -1016,10 +1016,10 @@ def export_all_students():
         return jsonify({'success': False, 'message': '权限不足'}), 403
 
     import io
+    import zipfile
     conn = get_db()
     with conn.cursor() as c:
         if operator_role == 'teacher':
-            # teacher 只导出分配给自己的学生
             c.execute(
                 'SELECT * FROM students WHERE assigned_teacher=%s OR assigned_teacher=%s OR teacher=%s OR teacher=%s ORDER BY id ASC',
                 (operator_username, operator_name, operator_username, operator_name)
@@ -1029,8 +1029,26 @@ def export_all_students():
         students = c.fetchall()
     conn.close()
 
+    # 上传目录
+    upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
     rows = []
+    # 记录有成绩文件的学生：{zip内文件名: 本地文件路径}
+    file_entries = {}
     for s in students:
+        raw_file = s.get('file_path', '') or ''
+        # 生成ZIP内的文件名：认定编号_姓名.扩展名（无认定编号则用ID）
+        zip_file_name = ''
+        if raw_file:
+            ext = os.path.splitext(raw_file)[-1]  # 保留原始扩展名
+            prefix = s.get('recognition_no') or f"ID{s.get('id', '')}"
+            safe_name = (s.get('name', '') or '').replace('/', '_').replace('\\', '_')
+            zip_file_name = f"{prefix}_{safe_name}{ext}"
+            local_path = os.path.join(upload_dir, raw_file)
+            if os.path.isfile(local_path):
+                file_entries[zip_file_name] = local_path
+            else:
+                zip_file_name = f"{zip_file_name}（文件缺失）"
         rows.append({
             '学生姓名': s.get('name', ''),
             '性别': s.get('gender', ''),
@@ -1058,11 +1076,13 @@ def export_all_students():
             '认定编号': s.get('recognition_no', ''),
             '负责老师': s.get('assigned_teacher') or s.get('teacher', ''),
             '备注': s.get('remark', ''),
+            '成绩文件': zip_file_name,
         })
 
+    # 生成 Excel
     df = pd.DataFrame(rows)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    excel_buf = io.BytesIO()
+    with pd.ExcelWriter(excel_buf, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='学生信息')
         workbook = writer.book
         worksheet = writer.sheets['学生信息']
@@ -1070,16 +1090,27 @@ def export_all_students():
         for col_num, col_name in enumerate(df.columns):
             worksheet.write(0, col_num, col_name, header_fmt)
             worksheet.set_column(col_num, col_num, max(len(str(col_name)) * 2, 12))
-    output.seek(0)
+    excel_buf.seek(0)
+
+    # 打包 ZIP
+    ts = beijing_now().replace(':', '-').replace(' ', '_')
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # 写入 Excel
+        zf.writestr(f'学生信息导出_{ts}.xlsx', excel_buf.getvalue())
+        # 写入成绩文件（放在子目录）
+        for zip_name, local_path in file_entries.items():
+            zf.write(local_path, arcname=f'成绩文件/{zip_name}')
+    zip_buf.seek(0)
 
     from flask import Response
     from urllib.parse import quote
-    filename = f"学生信息导出_{beijing_now().replace(':', '-').replace(' ', '_')}.xlsx"
-    encoded_filename = quote(filename, safe='')
+    zip_filename = f'学生信息全量导出_{ts}.zip'
+    encoded_filename = quote(zip_filename, safe='')
     return Response(
-        output.getvalue(),
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': f"attachment; filename=\"export.xlsx\"; filename*=UTF-8''{encoded_filename}"}
+        zip_buf.getvalue(),
+        mimetype='application/zip',
+        headers={'Content-Disposition': f"attachment; filename=\"export.zip\"; filename*=UTF-8''{encoded_filename}"}
     )
 
 

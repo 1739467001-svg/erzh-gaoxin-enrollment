@@ -1782,7 +1782,7 @@ async function exportAllStudents() {
         const now = new Date();
         const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
         a.href = url;
-        a.download = `学生信息全量导出_${ts}.xlsx`;
+        a.download = `学生信息全量导出_${ts}.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
