@@ -231,6 +231,7 @@
                                 <th>认定编号</th>
                                 <th>负责老师</th>
                                 <th>备注</th>
+                                <th>成绩文件</th>
                                 <th>登记时间</th>
                                 <th>操作</th>
                             </tr>
@@ -394,6 +395,17 @@
                         <div class="form-group"><label>认定编号</label><input type="text" id="editRecognition_no" placeholder="留空则不认定，填写后自动设为已认定"></div>
                         <div class="form-group"><label>负责老师</label><input type="text" id="editAssigned_teacher" placeholder="请输入负责老师姓名"></div>
                         <div class="form-group form-group-full"><label>备注</label><textarea id="editRemark" placeholder="请输入备注信息"></textarea></div>
+                        <!-- 成绩文件上传 -->
+                        <div class="form-group form-group-full">
+                            <label>成绩图片或PDF文件</label>
+                            <input type="hidden" id="editFilePath">
+                            <div id="editCurrentFile" style="display:none; margin-bottom:8px;">
+                                <span style="font-size:13px;color:#555;">当前文件：</span>
+                                <a id="editCurrentFileLink" href="#" target="_blank" style="color:#3b6cb7;font-size:13px;text-decoration:underline;">查看当前文件</a>
+                            </div>
+                            <input type="file" id="editScoreFile" accept="image/*,.pdf">
+                            <div style="font-size:12px;color:#999;margin-top:4px;">选择新文件将替换原有文件，不选则保留原有</div>
+                        </div>
                     </div>
                     <div class="form-submit-row">
                         <button type="submit" class="btn btn-primary">保存修改</button>

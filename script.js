@@ -838,7 +838,7 @@ function renderStudentTable(students) {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="29" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="30" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>';
         return;
     }
 
@@ -883,6 +883,7 @@ function renderStudentTable(students) {
             <td>${s.promised_class || ''}</td>
             <td>${s.assigned_teacher || s.teacher || ''}</td>
             <td>${truncate(s.remark, 18)}</td>
+            <td>${s.file_path ? `<button class="btn-table btn-view-file" onclick="viewScoreFile('${s.file_path}')">查看</button>` : '<span style="color:#ccc;font-size:12px;">无</span>'}</td>
             <td>${s.createTime || ''}</td>
             <td>
                 ${canEditDelete(s) ? `<button class="btn-table btn-edit" onclick="editStudent(${s.id})">编辑</button>` : ''}
@@ -982,6 +983,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!district) { showToast('请选择行政区', 'error'); return; }
             if (!reason) { showToast('请选择认定理由', 'error'); return; }
             if (!score) { showToast('请输入成绩', 'error'); return; }
+
+            // 先上传成绩文件（如有）
+            let filePath = '';
+            const fileInput = document.getElementById('regScoreFile');
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                const fd = new FormData();
+                fd.append('file', fileInput.files[0]);
+                try {
+                    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
+                    const uploadResult = await uploadRes.json();
+                    if (uploadResult.success) {
+                        filePath = uploadResult.file_path;
+                    } else {
+                        showToast('文件上传失败：' + uploadResult.message, 'error');
+                        return;
+                    }
+                } catch (err) {
+                    showToast('文件上传失败，请检查网络', 'error');
+                    return;
+                }
+            }
+
             const data = {
                 name: document.getElementById('studentName').value,
                 phone1: document.getElementById('phone1').value,
@@ -994,7 +1017,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 is_certified: document.getElementById('regIsConfirmed').value === '是' ? 1 : 0,
                 remark: document.getElementById('remark').value,
                 teacher: currentUser.name,
-                assigned_teacher: currentUser.name
+                assigned_teacher: currentUser.name,
+                file_path: filePath
             };
             const res = await fetch(`${API_BASE}/api/students`, {
                 method: 'POST',
@@ -1024,6 +1048,28 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const id = document.getElementById('editId').value;
             const recognitionNo = document.getElementById('editRecognition_no').value.trim();
+
+            // 处理文件上传：若选了新文件则上传，否则保留原有
+            let filePath = document.getElementById('editFilePath') ? document.getElementById('editFilePath').value : '';
+            const editFileInput = document.getElementById('editScoreFile');
+            if (editFileInput && editFileInput.files && editFileInput.files[0]) {
+                const fd = new FormData();
+                fd.append('file', editFileInput.files[0]);
+                try {
+                    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
+                    const uploadResult = await uploadRes.json();
+                    if (uploadResult.success) {
+                        filePath = uploadResult.file_path;
+                    } else {
+                        showToast('文件上传失败：' + uploadResult.message, 'error');
+                        return;
+                    }
+                } catch (err) {
+                    showToast('文件上传失败，请检查网络', 'error');
+                    return;
+                }
+            }
+
             const data = {
                 name: document.getElementById('editStudentName').value,
                 gender: document.getElementById('editGender').value,
@@ -1052,7 +1098,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 is_signed: recognitionNo ? 1 : 0,
                 assigned_teacher: document.getElementById('editAssigned_teacher').value,
                 remark: document.getElementById('editRemark').value,
-                teacher: currentUser.name
+                teacher: currentUser.name,
+                file_path: filePath
             };
             const res = await fetch(`${API_BASE}/api/students/${id}`, {
                 method: 'PUT',
@@ -1180,6 +1227,25 @@ async function editStudent(id) {
         document.getElementById('editRecognition_no').value = s.recognition_no || '';
         document.getElementById('editAssigned_teacher').value = s.assigned_teacher || s.teacher || '';
         document.getElementById('editRemark').value = s.remark || '';
+        // 显示当前成绩文件状态
+        const currentFileEl = document.getElementById('editCurrentFile');
+        const currentFileLinkEl = document.getElementById('editCurrentFileLink');
+        if (currentFileEl && currentFileLinkEl) {
+            if (s.file_path) {
+                currentFileEl.style.display = 'block';
+                currentFileLinkEl.href = `/uploads/${s.file_path}`;
+                const ext = s.file_path.split('.').pop().toLowerCase();
+                currentFileLinkEl.textContent = ext === 'pdf' ? '查看当前PDF文件' : '查看当前图片';
+            } else {
+                currentFileEl.style.display = 'none';
+            }
+        }
+        // 将当前 file_path 存入隐藏字段
+        const editFilePathEl = document.getElementById('editFilePath');
+        if (editFilePathEl) editFilePathEl.value = s.file_path || '';
+        // 清空文件选择框
+        const editScoreFileEl = document.getElementById('editScoreFile');
+        if (editScoreFileEl) editScoreFileEl.value = '';
     } catch (e) {
         showToast('加载学生数据失败', 'error');
     }
@@ -1727,4 +1793,22 @@ async function exportAllStudents() {
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = '导出数据'; }
     }
+}
+
+// ============================================================
+// 查看学生成绩文件（图片或PDF）
+// ============================================================
+function viewScoreFile(filePath) {
+    if (!filePath) return;
+    const ext = filePath.split('.').pop().toLowerCase();
+    const url = `/uploads/${filePath}`;
+    document.getElementById('pdfModalTitle').textContent = '成绩文件';
+    if (ext === 'pdf') {
+        document.getElementById('pdfFrame').src = url;
+        document.getElementById('pdfFrame').srcdoc = '';
+    } else {
+        document.getElementById('pdfFrame').src = '';
+        document.getElementById('pdfFrame').srcdoc = `<html><body style="margin:0;background:#222;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${url}" style="max-width:100%;max-height:100vh;display:block;"></body></html>`;
+    }
+    document.getElementById('pdfModal').style.display = 'flex';
 }
