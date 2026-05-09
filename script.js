@@ -828,11 +828,12 @@ function updateFilterActiveTag() {
 // ============================================================
 // 学生列表渲染 —— 严格按模板26列 + 登记时间 + 操作
 // 列顺序：序号 | 学生姓名 | 性别 | 联系电话1 | 联系电话2 | 行政区 |
-//         初中学校名称 | 毕业年份 | 班级 | 年级总人数 |
+//         初中学校名称 | 承诺班型 | 认定编号 | 负责老师 | 备注 |
+//         毕业年份 | 班级 | 年级总人数 |
 //         八上期末年级排名 | 八下期末年级排名 | 九上期中年级排名 | 九上期末排名 |
 //         九上期末分数 | 一模成绩 | 二模成绩 |
 //         测试试卷 | 测试地点 | 数学 | 英语 | 总分 | 评价等级 |
-//         承诺班型 | 认定编号 | 负责老师 | 备注 | 登记时间 | 操作
+//         成绩文件 | 登记时间 | 操作
 // ============================================================
 function renderStudentTable(students) {
     const tbody = document.getElementById('tableBody');
@@ -863,6 +864,10 @@ function renderStudentTable(students) {
             <td>${s.phone2 || ''}</td>
             <td>${s.district || ''}</td>
             <td>${truncate(s.school, 25)}</td>
+            <td>${s.promised_class || ''}</td>
+            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
+            <td>${s.assigned_teacher || s.teacher || ''}</td>
+            <td>${truncate(s.remark, 18)}</td>
             <td>${s.graduation_year || ''}</td>
             <td>${s.class_name || ''}</td>
             <td>${s.grade_total || ''}</td>
@@ -879,10 +884,6 @@ function renderStudentTable(students) {
             <td>${s.english_score || ''}</td>
             <td>${s.total_score || ''}</td>
             <td>${s.evaluation || ''}</td>
-            <td>${s.promised_class || ''}</td>
-            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
-            <td>${s.assigned_teacher || s.teacher || ''}</td>
-            <td>${truncate(s.remark, 18)}</td>
             <td>${s.file_path ? `<button class="btn-table btn-view-file" onclick="viewScoreFile('${s.file_path}')">查看</button>` : '<span style="color:#ccc;font-size:12px;">无</span>'}</td>
             <td>${s.createTime || ''}</td>
             <td>
@@ -1366,7 +1367,12 @@ function exportToExcel() {
 }
 
 // ============================================================
-// 下载导入模板 —— 与系统实际字段完全对应
+// 下载导入模板 —— 严格按用户提供模板的字段顺序
+// 顺序：学生姓名|性别|联系电话1|联系电话2|行政区|初中学校名称|
+//       承诺班型|认定编号|负责老师|备注|
+//       毕业年份|班级|年级总人数|八上期末年级排名|八下期末年级排名|
+//       九上期中年级排名|九上期末排名|九上期末分数|一模成绩|二模成绩|
+//       测试试卷|测试地点|数学|英语|总分|评价等级
 // ============================================================
 function downloadExcelTemplate() {
     // 第一行：字段说明（填写提示）
@@ -1377,6 +1383,10 @@ function downloadExcelTemplate() {
         '选填，备用手机号',
         '必填，如：拱墅区、西湖区',
         '必填，初中学校全称',
+        '必填，如：冲刺班/提高班/基础班',
+        '选填，有值则系统视为已认定（导入时编号由系统自动分配）',
+        '选填，负责老师姓名或账号',
+        '选填，其他备注信息',
         '选填，如：2025',
         '选填，如：905班',
         '选填，年级总人数（数字）',
@@ -1392,37 +1402,32 @@ function downloadExcelTemplate() {
         '选填，数学单科成绩',
         '选填，英语单科成绩',
         '选填，测试总分',
-        '选填，评价等级，如：A/B/C',
-        '必填，如：冲刺班/提高班/基础班',
-        '选填，有值则系统视为已认定（导入时编号由系统自动分配）',
-        '选填，负责老师姓名或账号',
-        '选填，其他备注信息'
+        '选填，评价等级，如：A/B/C'
     ];
-    // 第二行：字段名（与系统完全对应）
+    // 第二行：字段名（严格按用户模板顺序）
     const headers = [
-        '学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称','毕业年份','班级','年级总人数',
+        '学生姓名','性别','联系电话1','联系电话2','行政区','初中学校名称',
+        '承诺班型','认定编号','负责老师','备注',
+        '毕业年份','班级','年级总人数',
         '八上期末年级排名','八下期末年级排名','九上期中年级排名','九上期末排名',
         '九上期末分数','一模成绩','二模成绩',
-        '测试试卷','测试地点','数学','英语','总分','评价等级','承诺班型',
-        '认定编号','负责老师','备注'
+        '测试试卷','测试地点','数学','英语','总分','评价等级'
     ];
     // 第三行：示例数据
     const example = [
-        '张三','男','13800000001','13900000002','拱墅区','杭州大关实验中学','2025','905班','500',
-        '12','9','7','6','580','590','595','A卷','某校区','120','110','580','A','冲刺班',
-        '','张老师','示例备注'
+        '张三','男','13800000001','13900000002','拱墅区','杭州大关实验中学',
+        'A','','张老师','示例备注',
+        '2025','905班','500',
+        '12','9','7','6','580','590','595',
+        'A卷','某校区','120','110','580','A'
     ];
     const ws = XLSX.utils.aoa_to_sheet([tips, headers, example]);
-
-    // 样式：第1行（提示行）灰色背景，第2行（表头）蓝色背景白字
-    const colCount = headers.length;
     // 设置列宽
     ws['!cols'] = headers.map((h, i) => ({
         wch: Math.max(h.length * 2.2, tips[i] ? tips[i].length * 1.5 : 12, 12)
     }));
     // 冻结前两行
     ws['!freeze'] = { xSplit: 0, ySplit: 2 };
-
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '学生信息导入模板');
     XLSX.writeFile(wb, '学生信息导入模板.xlsx');
@@ -1526,6 +1531,10 @@ function renderSignPreviewTable() {
             <td><span class="cell-val">${s.phone2 || ''}</span></td>
             <td><span class="cell-val">${s.district || ''}</span></td>
             <td><span class="cell-val">${s.school || ''}</span></td>
+            <td><span class="cell-val">${s.promised_class || ''}</span></td>
+            <td>${certBadge}</td>
+            <td><span class="cell-val">${s.assigned_teacher || s.teacher || ''}</span></td>
+            <td><span class="cell-val">${s.remark || ''}</span></td>
             <td><span class="cell-val">${s.graduation_year || ''}</span></td>
             <td><span class="cell-val">${s.class_name || ''}</span></td>
             <td><span class="cell-val">${s.grade_total || ''}</span></td>
@@ -1542,10 +1551,6 @@ function renderSignPreviewTable() {
             <td><span class="cell-val">${s.english_score || ''}</span></td>
             <td><span class="cell-val">${s.total_score || ''}</span></td>
             <td><span class="cell-val">${s.evaluation || ''}</span></td>
-            <td><span class="cell-val">${s.promised_class || ''}</span></td>
-            <td>${certBadge}</td>
-            <td><span class="cell-val">${s.assigned_teacher || s.teacher || ''}</span></td>
-            <td><span class="cell-val">${s.remark || ''}</span></td>
             <td>
                 <button class="btn-table btn-edit" onclick="openSignEditModal(${idx})">编辑</button>
                 <button class="btn-table btn-delete" onclick="removeSignRow(${idx})">移除</button>
