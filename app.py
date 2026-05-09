@@ -209,6 +209,21 @@ def add_student():
             recognition_no = generate_recognition_no()
         is_signed = 1 if recognition_no else 0
 
+        # 根据认定理由将成绩写入对应字段
+        reason = data.get('reason', '')
+        score_val = data.get('score', '')
+        reason_score_map = {
+            '一模成绩': 'score_一模',
+            '二模成绩': 'score_二模',
+            '九上期末成绩': 'score_初三上期末',
+            '素质评定': 'total_score',
+        }
+        mapped_field = reason_score_map.get(reason)
+        # 将映射字段的值设置到data中（优先使用已有值，若为空则用score填充）
+        if mapped_field and score_val:
+            if not data.get(mapped_field):
+                data[mapped_field] = score_val
+
         conn = get_db()
         with conn.cursor() as c:
             c.execute('''INSERT INTO students (
@@ -367,6 +382,20 @@ def update_student(student_id):
             # 认定编号处理：recognition_no 不为空则 is_signed=1
             recognition_no = data.get('recognition_no', '')
             is_signed = 1 if recognition_no else int(data.get('is_signed', 0))
+
+            # 根据认定理由将成绩写入对应字段
+            reason = data.get('reason', '')
+            score_val = data.get('score', '')
+            reason_score_map = {
+                '一模成绩': 'score_一模',
+                '二模成绩': 'score_二模',
+                '九上期末成绩': 'score_初三上期末',
+                '素质评定': 'total_score',
+            }
+            mapped_field = reason_score_map.get(reason)
+            if mapped_field and score_val:
+                if not data.get(mapped_field):
+                    data[mapped_field] = score_val
             c.execute('''UPDATE students SET
                 name=%s, gender=%s, phone1=%s, phone2=%s, district=%s,
                 school=%s, graduation_year=%s, class_name=%s, grade_total=%s,
