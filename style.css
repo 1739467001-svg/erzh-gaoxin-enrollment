@@ -780,6 +780,8 @@ tbody td:nth-child(2) {
     z-index: 9;
     background: #ffffff;
     box-shadow: 4px 0 8px rgba(0, 0, 0, 0.08);
+    will-change: transform;
+    isolation: isolate;
 }
 
 /* 左侧第二列的右边框 */
@@ -795,17 +797,19 @@ tbody td:last-child {
     background: #ffffff;
     box-shadow: -4px 0 8px rgba(0, 0, 0, 0.08);
     border-left: 1px solid #e2e8f0;
+    will-change: transform;
+    isolation: isolate;
 }
 
-/* 悬停时保持背景颜色一致 */
+/* 悬停时保持背景颜色一致（纯色避免渐变导致字体重叠） */
 tbody tr:hover td:nth-child(1),
 tbody tr:hover td:nth-child(2) {
-    background: linear-gradient(90deg, rgba(59,130,246,0.04), rgba(59,130,246,0.08));
+    background: #eef3fc;
     box-shadow: 4px 0 8px rgba(0, 0, 0, 0.08);
 }
 
 tbody tr:hover td:last-child {
-    background: linear-gradient(90deg, rgba(59,130,246,0.04), rgba(59,130,246,0.08));
+    background: #eef3fc;
     box-shadow: -4px 0 8px rgba(0, 0, 0, 0.08);
 }
 
