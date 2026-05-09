@@ -2094,6 +2094,8 @@ tbody tr:hover td:last-child {
     border-radius: 5px; font-size: 13px; text-align: center; color: #2c4a8a; outline: none;
 }
 .page-jump input:focus { border-color: #2c4a8a; box-shadow: 0 0 0 2px rgba(44,74,138,0.12); }
+.page-jump-btn { padding: 4px 10px; font-size: 13px; background: #2c4a8a; color: #fff; border-color: #2c4a8a; }
+.page-jump-btn:hover { background: #1a3366; border-color: #1a3366; }
 
 /* ============================================================
    表格横向+纵向滚动条优化

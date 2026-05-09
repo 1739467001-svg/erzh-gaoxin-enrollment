@@ -811,7 +811,7 @@ function renderPagination() {
                 <span class="page-indicator">${currentPage} / ${totalPages}</span>
                 <button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>
                 <button class="page-btn" onclick="goPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>末页</button>
-                <span class="page-jump">跳转 <input type="number" id="pageJumpInput" min="1" max="${totalPages}" value="${currentPage}" onkeydown="if(event.key==='Enter')jumpToPage()"> 页</span>
+                <span class="page-jump">跳转 <input type="number" id="pageJumpInput" min="1" max="${totalPages}" value="${currentPage}" onkeydown="if(event.key==='Enter')jumpToPage()"> 页 <button class="page-btn page-jump-btn" onclick="jumpToPage()">跳转</button></span>
             </div>
         </div>
     `;
