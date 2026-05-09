@@ -741,35 +741,115 @@ function getLogBadgeClass(action) {
 }
 
 // ============================================================
-// 学生管理
+// 学生管理 —— 后端分页
 // ============================================================
-async function loadStudents() {
+
+// 分页状态
+let currentPage = 1;
+let currentPageSize = 20;
+let totalStudents = 0;
+
+async function loadStudents(resetPage) {
+    if (resetPage) currentPage = 1;
     try {
-        let url = `${API_BASE}/api/students`;
-        if (currentUser && currentUser.role === 'teacher') {
-            const params = new URLSearchParams({
-                role: currentUser.role,
-                username: currentUser.username || '',
-                name: currentUser.name || ''
-            });
-            url += `?${params.toString()}`;
-        }
-        const res = await fetch(url);
-        allStudents = await res.json();
-        // 默认按认定编号从小到大排序：有编号的排前，无编号的排后
-        allStudents.sort((a, b) => {
-            const na = parseInt(a.recognition_no) || 0;
-            const nb = parseInt(b.recognition_no) || 0;
-            if (na && nb) return na - nb;       // 两者都有编号：按编号升序
-            if (na) return -1;                  // a有编号、b没有：a排前
-            if (nb) return 1;                   // b有编号、a没有：b排前
-            return a.id - b.id;                 // 两者都无编号：按id升序
+        const params = new URLSearchParams({
+            page: currentPage,
+            page_size: currentPageSize
         });
+        if (currentUser && currentUser.role === 'teacher') {
+            params.set('role', currentUser.role);
+            params.set('username', currentUser.username || '');
+            params.set('name', currentUser.name || '');
+        }
+        // 带入当前筛选条件
+        const keyword = (document.getElementById('searchInput')?.value || '').trim();
+        const signed   = document.getElementById('filterSigned')?.value || '';
+        const district = document.getElementById('filterDistrict')?.value || '';
+        const teacher  = document.getElementById('filterTeacher')?.value || '';
+        const cls      = document.getElementById('filterClass')?.value || '';
+        if (keyword)  params.set('keyword', keyword);
+        if (signed !== '') params.set('is_signed', signed);
+        if (district) params.set('district', district);
+        if (teacher)  params.set('teacher', teacher);
+        if (cls)      params.set('promised_class', cls);
+
+        const res = await fetch(`${API_BASE}/api/students?${params.toString()}`);
+        const json = await res.json();
+        allStudents = json.data || [];
+        totalStudents = json.total || 0;
         renderStudentTable(allStudents);
-        populateFilterOptions(allStudents);
+        renderPagination();
+        // 首次加载时填充筛选下拉（需要全量数据，单独请求）
+        if (resetPage || currentPage === 1) {
+            populateFilterOptionsFromServer();
+        }
     } catch (e) {
         console.error('加载学生数据失败', e);
     }
+}
+
+// 从服务器获取全量去重选项（用于筛选下拉）
+async function populateFilterOptionsFromServer() {
+    try {
+        const params = new URLSearchParams({ page: 1, page_size: 9999 });
+        if (currentUser && currentUser.role === 'teacher') {
+            params.set('role', currentUser.role);
+            params.set('username', currentUser.username || '');
+            params.set('name', currentUser.name || '');
+        }
+        const res = await fetch(`${API_BASE}/api/students?${params.toString()}`);
+        const json = await res.json();
+        populateFilterOptions(json.data || []);
+    } catch (e) {}
+}
+
+// 渲染分页控件
+function renderPagination() {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+    const totalPages = Math.ceil(totalStudents / currentPageSize) || 1;
+    const start = totalStudents === 0 ? 0 : (currentPage - 1) * currentPageSize + 1;
+    const end   = Math.min(currentPage * currentPageSize, totalStudents);
+
+    container.innerHTML = `
+        <div class="pagination-info">共 <strong>${totalStudents}</strong> 条，当前显示 ${start}-${end} 条</div>
+        <div class="pagination-controls">
+            <div class="page-size-btns">
+                每页
+                ${[10, 20, 50].map(n => `<button class="page-size-btn${currentPageSize === n ? ' active' : ''}" onclick="changePageSize(${n})">${n}</button>`).join('')}
+                条
+            </div>
+            <div class="page-nav">
+                <button class="page-btn" onclick="goPage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button>
+                <button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
+                <span class="page-indicator">${currentPage} / ${totalPages}</span>
+                <button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>
+                <button class="page-btn" onclick="goPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>末页</button>
+                <span class="page-jump">跳转 <input type="number" id="pageJumpInput" min="1" max="${totalPages}" value="${currentPage}" onkeydown="if(event.key==='Enter')jumpToPage()"> 页</span>
+            </div>
+        </div>
+    `;
+}
+
+function goPage(p) {
+    const totalPages = Math.ceil(totalStudents / currentPageSize) || 1;
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    loadStudents(false);
+}
+
+function changePageSize(size) {
+    currentPageSize = size;
+    currentPage = 1;
+    loadStudents(false);
+}
+
+function jumpToPage() {
+    const input = document.getElementById('pageJumpInput');
+    if (!input) return;
+    const p = parseInt(input.value);
+    const totalPages = Math.ceil(totalStudents / currentPageSize) || 1;
+    if (p >= 1 && p <= totalPages) goPage(p);
 }
 
 // 动态填充筛选下拉选项
@@ -897,9 +977,8 @@ function renderStudentTable(students) {
 
 // 高级筛选（客户端过滤）
 function applyFilters() {
-    const filtered = getCurrentFilteredStudents();
     updateFilterActiveTag();
-    renderStudentTable(filtered);
+    loadStudents(true); // 筛选时重置到第1页
 }
 
 function clearFilters() {
@@ -914,7 +993,7 @@ function clearFilters() {
     if (ft) ft.value = '';
     if (fc) fc.value = '';
     updateFilterActiveTag();
-    renderStudentTable(allStudents);
+    loadStudents(true); // 清空筛选时重置到第1页
 }
 
 // ============================================================

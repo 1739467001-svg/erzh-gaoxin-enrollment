@@ -279,6 +279,13 @@ def get_students():
         current_role = request.args.get('role', '')
         current_username = request.args.get('username', '')
         current_name = request.args.get('name', '')
+        # 分页参数
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 20))
+        if page_size not in [10, 20, 50]:
+            page_size = 20
+        if page < 1:
+            page = 1
 
         if is_signed is not None and is_signed != '':
             conditions.append('is_signed = %s')
@@ -303,7 +310,15 @@ def get_students():
             params.extend([current_username, current_name, current_username, current_name])
 
         where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
-        c.execute(f'SELECT * FROM students {where} ORDER BY id DESC', params)
+
+        # 查询总条数
+        c.execute(f'SELECT COUNT(*) as total FROM students {where}', params)
+        total = c.fetchone()['total']
+
+        # 分页查询
+        offset = (page - 1) * page_size
+        c.execute(f'SELECT * FROM students {where} ORDER BY id DESC LIMIT %s OFFSET %s',
+                  params + [page_size, offset])
         students = c.fetchall()
     conn.close()
 
@@ -334,7 +349,7 @@ def get_students():
             'assigned_teacher': s.get('assigned_teacher', ''),
             'teacher': s['teacher'], 'createTime': s['createTime']
         })
-    return jsonify(result)
+    return jsonify({'data': result, 'total': total, 'page': page, 'page_size': page_size})
 
 
 @app.route('/api/students/<int:student_id>', methods=['GET'])

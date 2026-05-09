@@ -2050,3 +2050,60 @@ tbody tr:hover td:last-child {
     background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
     box-shadow: 0 4px 12px rgba(167,139,250,0.4);
 }
+
+/* ============================================================
+   分页控件样式
+   ============================================================ */
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 4px 6px;
+    border-top: 1px solid #e8edf5;
+    margin-top: 4px;
+}
+.pagination-info { font-size: 13px; color: #666; }
+.pagination-info strong { color: #2c4a8a; font-weight: 700; }
+.pagination-controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.page-size-btns { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #666; }
+.page-size-btn {
+    padding: 4px 10px; border: 1px solid #c8d4e8; border-radius: 5px;
+    background: #f5f8ff; color: #2c4a8a; font-size: 13px; cursor: pointer; transition: all 0.18s;
+}
+.page-size-btn:hover { background: #dce8ff; border-color: #2c4a8a; }
+.page-size-btn.active { background: #2c4a8a; color: #fff; border-color: #2c4a8a; font-weight: 600; }
+.page-nav { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.page-btn {
+    padding: 4px 12px; border: 1px solid #c8d4e8; border-radius: 5px;
+    background: #f5f8ff; color: #2c4a8a; font-size: 13px; cursor: pointer; transition: all 0.18s;
+}
+.page-btn:hover:not(:disabled) { background: #2c4a8a; color: #fff; border-color: #2c4a8a; }
+.page-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+.page-indicator {
+    padding: 4px 12px; background: #2c4a8a; color: #fff;
+    border-radius: 5px; font-size: 13px; font-weight: 600; min-width: 56px; text-align: center;
+}
+.page-jump { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #666; }
+.page-jump input {
+    width: 52px; padding: 4px 6px; border: 1px solid #c8d4e8;
+    border-radius: 5px; font-size: 13px; text-align: center; color: #2c4a8a; outline: none;
+}
+.page-jump input:focus { border-color: #2c4a8a; box-shadow: 0 0 0 2px rgba(44,74,138,0.12); }
+
+/* ============================================================
+   表格横向+纵向滚动条优化
+   ============================================================ */
+.table-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 320px);
+    border-radius: 8px;
+    border: 1px solid #e4eaf5;
+}
+.table-container::-webkit-scrollbar { width: 7px; height: 7px; }
+.table-container::-webkit-scrollbar-track { background: #f0f4fb; border-radius: 4px; }
+.table-container::-webkit-scrollbar-thumb { background: #b0c0dc; border-radius: 4px; }
+.table-container::-webkit-scrollbar-thumb:hover { background: #2c4a8a; }
+.table-container::-webkit-scrollbar-corner { background: #f0f4fb; }
