@@ -858,7 +858,6 @@ function renderStudentTable(students) {
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td>${s.name || ''}</td>
-            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
             <td>${s.gender || ''}</td>
             <td>${s.phone1 || ''}</td>
             <td>${s.phone2 || ''}</td>
@@ -881,6 +880,7 @@ function renderStudentTable(students) {
             <td>${s.total_score || ''}</td>
             <td>${s.evaluation || ''}</td>
             <td>${s.promised_class || ''}</td>
+            <td>${recognitionNo ? `<span class="badge badge-success">${recognitionNo}</span>` : isSignedBadge}</td>
             <td>${s.assigned_teacher || s.teacher || ''}</td>
             <td>${truncate(s.remark, 18)}</td>
             <td>${s.file_path ? `<button class="btn-table btn-view-file" onclick="viewScoreFile('${s.file_path}')">查看</button>` : '<span style="color:#ccc;font-size:12px;">无</span>'}</td>
