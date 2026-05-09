@@ -513,60 +513,42 @@ def clear_all_students():
 # ============================================================
 @app.route('/api/students/auto-number', methods=['POST'])
 def auto_number_students():
+    """
+    一键编号：按数据库中所有学生的 id ASC 顺序，从 2600001 开始依次分配认定编号。
+    不依赖前端传入的 student_ids，完全由后端全量处理，确保编号与数据库顺序一致。
+    """
     data = request.get_json() or {}
     operator_name = data.get('operator_name', '')
     operator_role = data.get('operator_role', '')
-    raw_student_ids = data.get('student_ids', [])  # 按展示顺序传入的 id 列表
+
     if operator_role not in ('admin', 'manager'):
         return jsonify({'success': False, 'message': '权限不足，仅管理员及以上可执行此操作'})
-    if not raw_student_ids:
-        return jsonify({'success': False, 'message': '未提供学生列表'})
-
-    student_ids = []
-    seen_ids = set()
-    for sid in raw_student_ids:
-        try:
-            sid_int = int(sid)
-        except Exception:
-            continue
-        if sid_int <= 0 or sid_int in seen_ids:
-            continue
-        seen_ids.add(sid_int)
-        student_ids.append(sid_int)
-
-    if not student_ids:
-        return jsonify({'success': False, 'message': '学生列表无效，请刷新后重试'})
 
     start_no = 2600001
-    end_no = start_no + len(student_ids) - 1
-    id_placeholders = ','.join(['%s'] * len(student_ids))
     temp_prefix = f"TMP{uuid.uuid4().hex[:10]}"
 
     conn = get_db()
     try:
         with conn.cursor() as c:
-            c.execute(f'SELECT id FROM students WHERE id IN ({id_placeholders})', student_ids)
-            existing_ids = {row['id'] for row in c.fetchall()}
-            missing_ids = [sid for sid in student_ids if sid not in existing_ids]
-            if missing_ids:
-                raise ValueError('部分学生不存在，请刷新列表后重试')
+            # 1. 按 id ASC 取全库所有学生 id
+            c.execute('SELECT id FROM students ORDER BY id ASC')
+            rows = c.fetchall()
+            student_ids = [row['id'] for row in rows]
 
+            if not student_ids:
+                conn.close()
+                return jsonify({'success': False, 'message': '数据库中暂无学生数据'})
+
+            end_no = start_no + len(student_ids) - 1
+
+            # 2. 先用临时前缀占位，避免编号冲突
             for sid in student_ids:
                 c.execute(
                     'UPDATE students SET recognition_no=%s, is_signed=1 WHERE id=%s',
                     (f'{temp_prefix}{sid}', sid)
                 )
 
-            conflict_sql = f'''
-                UPDATE students
-                SET recognition_no='', is_signed=0
-                WHERE recognition_no REGEXP '^[0-9]+$'
-                  AND CAST(recognition_no AS UNSIGNED) BETWEEN %s AND %s
-                  AND id NOT IN ({id_placeholders})
-            '''
-            c.execute(conflict_sql, [start_no, end_no, *student_ids])
-            cleared_count = c.rowcount
-
+            # 3. 按顺序写入正式编号
             for i, sid in enumerate(student_ids):
                 new_no = str(start_no + i)
                 c.execute(
@@ -576,12 +558,12 @@ def auto_number_students():
 
         conn.commit()
         conn.close()
-        add_log(operator_name, '一键编号', '当前列表', f'共分配 {len(student_ids)} 个编号，范围 {start_no}-{end_no}，清理冲突 {cleared_count} 条')
+        add_log(operator_name, '一键编号', '全库数据',
+                f'共分配 {len(student_ids)} 个编号，范围 {start_no}-{end_no}')
         return jsonify({
             'success': True,
-            'message': f'已成功为 {len(student_ids)} 位学生重新分配认定编号，范围：{start_no} ~ {end_no}',
-            'count': len(student_ids),
-            'cleared_conflicts': cleared_count
+            'message': f'已成功为全库 {len(student_ids)} 位学生重新分配认定编号，范围：{start_no} ~ {end_no}',
+            'count': len(student_ids)
         })
     except Exception as e:
         conn.rollback()

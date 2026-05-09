@@ -550,20 +550,9 @@ function getCurrentFilteredStudents() {
 }
 
 async function autoNumberStudents() {
-    if (!allStudents || allStudents.length === 0) {
-        showToast('当前无学生数据，请先导入数据', 'error');
-        return;
-    }
-
-    const currentStudents = getCurrentFilteredStudents();
-    if (!currentStudents || currentStudents.length === 0) {
-        showToast('当前列表无可编号学生，请先调整筛选条件', 'error');
-        return;
-    }
-
-    const total = currentStudents.length;
+    // 一键编号：按数据库全量数据的 id 顺序重新编号，与分页/筛选无关
     const confirmed = window.confirm(
-        `即将对当前列表中全部 ${total} 位学生重新分配认定编号，\n编号范围：2600001 ~ ${2600000 + total}\n\n原有编号将被覆盖，确认执行？`
+        `即将对数据库中【全部】学生按入库先后顺序重新分配认定编号，\n编号从 2600001 开始依次递增。\n\n原有编号将被全部覆盖，确认执行？`
     );
     if (!confirmed) return;
 
@@ -571,14 +560,11 @@ async function autoNumberStudents() {
     btn.disabled = true;
     btn.textContent = '编号中...';
 
-    const studentIds = currentStudents.map(s => s.id);
-
     try {
         const res = await fetch(`${API_BASE}/api/students/auto-number`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                student_ids: studentIds,
                 operator_name: currentUser.name,
                 operator_role: currentUser.role
             })
